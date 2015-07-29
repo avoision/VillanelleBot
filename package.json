@@ -1,11 +1,11 @@
 {
-    "name"            : "desirebot",
+    "name"            : "villanelleBot",
     "version"         : "1.0.0",
-    "description"     : "A Twitter bot that re-posts tweets that begin with 'I just want...' and also uploads a random matching Flickr image.",
+    "description"     : "A Twitter bot that creates a villanelle, using a combination of tweets from different individuals.",
     "author"          : "Felix Jung",
-    "main"            : "desirebot.js", 
+    "main"            : "villanelle.js", 
     "scripts"         : {
-        "start" : "node desirebot.js"
+        "start" : "node villanelle.js"
     },
     "engines"         : {
         "node": "0.10.x"
@@ -16,7 +16,6 @@
         "node-rest-client"  : "~1.4.3",
         "twit"              : "~1.1.19",
         "wordfilter"        : "~0.1.8-1",
-        "request"           : "~2.51.0",
-        "twitter-pic"       : "~0.1.0"
+        "request"           : "~2.51.0"
     }
 }

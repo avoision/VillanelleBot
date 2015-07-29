@@ -1,31 +1,23 @@
-var _             = require('lodash');
-var Client        = require('node-rest-client').Client;
+// var _             = require('lodash');
+// var Client        = require('node-rest-client').Client;
 var Twit          = require('twit');
 var async         = require('async');
-var wordfilter    = require('wordfilter');
-var TwitterPic 	  = require('twitter-pic');
-var request       = require('request');
+// var wordfilter    = require('wordfilter');
+// var request       = require('request');
 
 var t = new Twit({
-    consumer_key:         	process.env.DESIREBOT_TWIT_CONSUMER_KEY,
-    consumer_secret:      	process.env.DESIREBOT_TWIT_CONSUMER_SECRET,
-    access_token:         	process.env.DESIREBOT_TWIT_ACCESS_TOKEN,
-    access_token_secret:  	process.env.DESIREBOT_TWIT_ACCESS_TOKEN_SECRET
+    consumer_key:         	process.env.VILLANELLE_TWIT_CONSUMER_KEY,
+    consumer_secret:      	process.env.VILLANELLE_TWIT_CONSUMER_SECRET,
+    access_token:         	process.env.VILLANELLE_TWIT_ACCESS_TOKEN,
+    access_token_secret:  	process.env.VILLANELLE_TWIT_ACCESS_TOKEN_SECRET
 });
 
-var tp = new TwitterPic({
-	consumer_key:    		process.env.DESIREBOT_TWIT_CONSUMER_KEY,
-	consumer_secret: 		process.env.DESIREBOT_TWIT_CONSUMER_SECRET,
-	token:           		process.env.DESIREBOT_TWIT_ACCESS_TOKEN,
-	token_secret:    		process.env.DESIREBOT_TWIT_ACCESS_TOKEN_SECRET
-});
-
-var wordnikKey = 			process.env.DESIREBOT_WORDNIK_KEY;
+// var wordnikKey = 			process.env.DESIREBOT_WORDNIK_KEY;
 
 getPublicTweet = function(cb) {
-    t.get('search/tweets', {q: '\"i%20just%20want\"', count: 100, result_type: 'recent', lang: 'en'}, function(err, data, response) {
+    t.get('search/tweets', {q: '\"%20\"', count: 100, result_type: 'recent', lang: 'en'}, function(err, data, response) {
 		if (!err) {
-			var pattern = /^i\ just\ want/;
+			var pattern;
 			var botData = {
 				allPosts: [],
 				allParsedTweets: [],
@@ -485,13 +477,13 @@ run = function() {
 
     async.waterfall([
 		getPublicTweet, 
-		extractWordsFromTweet,
-		getAllWordData, 
-		findNouns,
-		getAllFlickrIDs,
-		flickrIDClean,
-		getAllFlickrSizes,
-		formatTweet
+		// extractWordsFromTweet,
+		// getAllWordData, 
+		// findNouns,
+		// getAllFlickrIDs,
+		// flickrIDClean,
+		// getAllFlickrSizes,
+		// formatTweet
     ],
     function(err, botData) {
 		if (err) {
@@ -523,11 +515,14 @@ iReallyReallyWantToDeleteAllTweets = function() {
 	})
 }
 
-setInterval(function() {
-  try {
-    run();
-  }
-  catch (e) {
-    console.log(e);
-  }
-}, 60000 * 30);
+// setInterval(function() {
+//   try {
+//     run();
+//   }
+//   catch (e) {
+//     console.log(e);
+//   }
+// }, 60000 * 30);
+
+run();
+
