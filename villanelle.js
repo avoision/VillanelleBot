@@ -6,27 +6,259 @@ var wordfilter    = require('wordfilter');
 var request       = require('request');
 var emojiRegex 	  = require('emoji-regex');
 
+// var t = new Twit({
+//     consumer_key: 			process.env.VILLANELLE_TWIT_CONSUMER_KEY,
+//     consumer_secret: 		process.env.VILLANELLE_TWIT_CONSUMER_SECRET,
+//     access_token: 			process.env.VILLANELLE_TWIT_ACCESS_TOKEN,
+//     access_token_secret: 	process.env.VILLANELLE_TWIT_ACCESS_TOKEN_SECRET
+// });
+
 var t = new Twit({
     consumer_key: 			process.env.VILLANELLE_TWIT_CONSUMER_KEY,
     consumer_secret: 		process.env.VILLANELLE_TWIT_CONSUMER_SECRET,
-    access_token: 			process.env.VILLANELLE_TWIT_ACCESS_TOKEN,
-    access_token_secret: 	process.env.VILLANELLE_TWIT_ACCESS_TOKEN_SECRET
+    app_only_auth: 			true
+    // access_token: 			process.env.VILLANELLE_TWIT_ACCESS_TOKEN,
+    // access_token_secret: 	process.env.VILLANELLE_TWIT_ACCESS_TOKEN_SECRET
 });
+   
 
 var wordnikKey = 			process.env.VILLANELLE_WORDNIK_KEY;
 
-getPublicTweet = function(cb) {
-    t.get('search/tweets', {q: '\"%20\"', count: 100, result_type: 'recent', lang: 'en'}, function(err, data, response) {
-		if (!err) {
-			var botData = {
-				allPosts: [],
-				allParsedTweets: [],
-				allPostsWordList: [],
-				wordList: [],
-				nounList: [],
-ste				titleMatchArray: []
-			};
+
+getRandomWords = function(cb) {
+	console.log("========= Get Random Words =========");	
+	var botData = {
+		allWords: [],
+		rhymingWordsData: [],
+		rhymingWordsArray: [],
+		aWords: [],
+		bWords: [],
+		aTweetsFull: [],
+		bTweetsFull: [],
+		aPhrases: [],
+		bPhrases: [],
+		aPhrasesQuotaMet: false,
+		bPhrasesQuotaMet: false
+		// allPosts: [],
+		// allParsedTweets: [],
+		// allPostsWordList: [],
+		// wordList: [],
+		// nounList: [],
+		// titleMatchArray: []
+	};
+
+    var client = new Client();
+    var partsOfSpeech = ["noun", "adjective", "verb"],
+    	randomPos = Math.floor(Math.random() * partsOfSpeech.length),
+    	randomPartOfSpeech = partsOfSpeech[randomPos];
+
+    var wordnikRandomOptions = {
+    	hasDictionaryDef: "true",
+		includePartOfSpeech: randomPartOfSpeech,
+		minCorpusCount: "10000",
+		maxCorpusCount: "-1",
+		minDictionaryCount: "5",
+		maxDictionaryCount: "-1",
+		minLength: "3",
+		maxLength: "7",
+		limit: "50",
+		api_key: wordnikKey
+    };
+
+    // If verb, require fewer definitions
+    if (randomPartOfSpeech == "verb") {
+    	wordnikRandomOptions.minDictionaryCount = 2;
+    };
+
+    var wordnikGetRandomWordsURL = 
+		"http://api.wordnik.com:80/v4/words.json/randomWords" 
+		+ "?hasDictionaryDef=" + wordnikRandomOptions.hasDictionaryDef
+		+ "&includePartOfSpeech=" + wordnikRandomOptions.includePartOfSpeech
+		+ "&minCorpusCount=" + wordnikRandomOptions.minCorpusCount
+		+ "&maxCorpusCount=" + wordnikRandomOptions.maxCorpusCount
+		+ "&minDictionaryCount=" + wordnikRandomOptions.minDictionaryCount
+		+ "&maxDictionaryCount=" + wordnikRandomOptions.maxDictionaryCount
+		+ "&minLength=" + wordnikRandomOptions.minLength
+		+ "&maxLength=" + wordnikRandomOptions.maxLength
+		+ "&limit=" + wordnikRandomOptions.limit
+		+ "&api_key=" + wordnikRandomOptions.api_key;
+
+
+    var args = {
+		headers: {'Accept':'application/json'}
+    };
+
+    client.get(wordnikGetRandomWordsURL, args, function (data, response) {
+		if (response.statusCode === 200) {
+			var result = JSON.parse(data);
+			cb(null, botData, result);
+		} else {
+			cb(null, null);
+		}
+    });
+};
+
+cleanRandomWords = function(botData, result, cb) {
+	console.log("========= Clean Random Words =========");	
+	for (var i = result.length - 1; i >= 0; i--) {
+		// If word begins with a capital letter, or contains an apostrophe: remove.
+		if ((result[i].word.charAt(0) == result[i].word.charAt(0).toUpperCase()) 
+			|| (/'/.test(result[i].word))) {
+			result.splice(i, 1);
+		} else {
+			botData.allWords.push(result[i].word);
+		};
+	};
+	cb(null, botData);
+};
+
+
+getAllRhymes = function(botData, cb) {
+	console.log("========= Get All Rhymes =========");	
+
+	getRhymesSequence = function() {
+	    async.mapSeries(botData.allWords, findRhymes, function(err, results){
+	    	if (err) {
+	    		cb("Problem getting rhyming words");
+	    	} else {
+	    		botData.rhymingWordsData = results;
+	    		cb(null, botData);
+	    	}	
+	    }); 
+	}
+	getRhymesSequence();
+}
+
+
+findRhymes = function(word, cb) {
+	// console.log("========= Find Rhymes: " + word + " =========");	
+
+	var wordnikRhymeOptions = {
+			useCanonical: "false",
+			relationshipTypes: "rhyme",
+			limitPerRelationshipType: "100",
+			api_key: wordnikKey
+		};
+
+	var client = new Client();
+
+	var wordnikURL = 
+		"http://api.wordnik.com:80/v4/word.json/"
+		+ word + "/relatedWords"
+		+ "?useCanonical=" + wordnikRhymeOptions.useCanonical
+		+ "&relationshipTypes=" + wordnikRhymeOptions.relationshipTypes
+		+ "&limitPerRelationshipType=" + wordnikRhymeOptions.limitPerRelationshipType
+		+ "&api_key=" + wordnikKey;
+
+	var args = {
+		headers: {'Accept':'application/json'}
+	};
+	
+    client.get(wordnikURL, args, function (data, response) {
+		if (response.statusCode === 200) {
+			var result = JSON.parse(data);
 			
+			if (result.length) {
+				cb(null, result);
+			} else {
+				cb(null, null);
+			}
+			return;
+		} else {
+			cb(null, null);
+		}
+    });
+};
+
+
+createRhymeLists = function(botData, cb) {
+	console.log("========= Create Rhyme Lists =========");	
+
+	var rhymingWordsArray = [];
+	
+	for (var i = 0; i < botData.allWords.length; i++) {
+		rhymingWordsArray[i] = [];
+		rhymingWordsArray[i].push(botData.allWords[i]);
+	}
+
+	for (var j = 0; j < botData.rhymingWordsData.length; j++) {
+		var currentArrayPos = botData.rhymingWordsData[j];
+		if (currentArrayPos != null) {
+			// Cycle through rhyming words. 
+			for (var k = 0; k < currentArrayPos[0].words.length; k++) {
+				var currentWord = currentArrayPos[0].words[k];
+				// Ensure first letter is not capitalized.
+				// Also: remove based on length? Anything greater than 11 characters?
+				if (currentWord.charAt(0) !== currentWord.charAt(0).toUpperCase()
+					&& (currentWord.length <= 11)) {
+					rhymingWordsArray[j].push(currentArrayPos[0].words[k]);
+				}			
+			}
+		}
+	}
+
+	// Cycle through array, remove anything with less than 10 rhyming words.
+	for (x = rhymingWordsArray.length - 1; x >= 0; x--) {
+		if (rhymingWordsArray[x].length < 15) {
+			rhymingWordsArray.splice(x, 1);
+		}
+	}
+
+	botData.rhymingWordsArray = rhymingWordsArray.sort(function(a, b) {
+		return b.length - a.length;
+	});
+
+	cb(null, botData);
+}
+
+
+setRhymeSchemes = function(botData, cb) {
+	console.log("========= Set Rhyme Schemes =========");	
+
+	if (botData.rhymingWordsArray.length >= 2) {
+		botData.aWords = botData.rhymingWordsArray[0];
+		botData.bWords = botData.rhymingWordsArray[1];
+
+		botData.rhymingWordsArray.splice(0, 2);
+		cb(null, botData);
+	} else {
+		cb("We've run out of rhyming words to search for. This ends now.");
+	}
+};
+
+
+getAllPublicTweets = function(botData, cb) {
+	console.log("========= Get All Public Tweets =========");
+
+	getAllTweetsSequence = function(wordsArray, rhyme) {
+	    async.mapSeries(wordsArray, getTweetsByWord, function(err, results){
+	    	if (err) {
+	    		cb("Problem getting Tweets. Sequence failed.");
+	    	} else {
+	    		if (rhyme == "a") {
+	    			console.log("A tweets completed.");
+	    			botData.aTweetsFull = results;
+					getAllTweetsSequence(botData.bWords, "b");
+	    		} else {
+	    			console.log("B tweets completed.");
+	    			botData.bTweetsFull = results;
+	    			cb(null, botData);
+	    		}    		
+	    	}	
+	    }); 
+	}
+
+	getAllTweetsSequence(botData.aWords, "a");
+}
+
+
+
+getTweetsByWord = function(word, cb) {
+    t.get('search/tweets', {q: word, count: 100, result_type: 'recent', lang: 'en'}, function(err, data, response) {
+		if (!err) {
+			
+			var twitterResults = [];
+
 			// Loop through all returned statues
 			for (var i = 0; i < data.statuses.length; i++) {
 
@@ -42,265 +274,56 @@ ste				titleMatchArray: []
 					if (emojiRegex().test(tweet) == false) {
 						// Does the tweet have a reply, hashtag, or URL?
 						if ((hasReply == -1) && (hasHashtag == -1) && (hasLink == -1) && (hasAmp == -1)) {
-							botData.allPosts.push(data.statuses[i].text);
+							
+							// Checking if word is at the end of a sentence.
+							var regex = new RegExp(word + "[?!.]+$");
+							if (regex.test(tweet)) {
+								// Keep under 50 characters in length;
+								if (tweet.length <= 50) {
+									twitterResults.push(data.statuses[i].text);
+								}
+							}				
 						}
 					}
 				}
 			}
-
-			if (botData.allPosts.length > 0 ) {
-				// Remove duplicates
-				botData.allPosts = _.uniq(botData.allPosts);
-
-				console.log(botData.allPosts);
-
-       			cb(null, botData);
-			} else {
-				cb("No tweets beginning with \'I just want...\'");
-			}
+			cb(null, twitterResults);
 		} else {
-			cb("There was an error getting a public Tweet. Abandoning EVERYTHING :(");
+			console.log(err);
+			cb("There was an error getting a public Tweet.");
 		}
     });
 };
 
 
-// extractWordsFromTweet = function(botData, cb) {
-// 	console.log('--Extract');
+theNextThing = function(botData, cb) {
+	// Clean up and transfer workable A phrases
+	for (var i = 0; i < botData.aTweetsFull.length; i++) {
+	    if (botData.aTweetsFull[i].length > 0) {
+	        for (var j = 0; j < botData.aTweetsFull[i].length; j++) {
+				botData.aPhrases.push(botData.aTweetsFull[i][j]); 
+	        }
+	    }
+	}	
 
-//     var excludeNonAlpha       = /[^a-zA-Z]+/;
-//     var excludeURLs           = /https?:\/\/[-a-zA-Z0-9@:%_\+.~#?&\/=]+/g;
-//     var excludeShortAlpha     = /\b[a-z][a-z]?\b/g;
-//     var excludeHandles        = /@[a-z0-9_-]+/g;
-//     var excludePatterns       = [excludeURLs, excludeShortAlpha, excludeHandles];
+	// Clean up and transfer workable B phrases
+	for (var x = 0; x < botData.aTweetsFull.length; x++) {
+	    if (botData.aTweetsFull[x].length > 0) {
+	        for (var y = 0; y < botData.aTweetsFull[x].length; y++) {
+				botData.aPhrases.push(botData.aTweetsFull[x][y]); 
+	        }
+	    }
+	}
 
-//     for (i = 0; i < botData.allPosts.length; i++) {
-//     	var currentTweet = botData.allPosts[i].toLowerCase();
-
-// 	    _.each(excludePatterns, function(pat) {
-// 			currentTweet = currentTweet.replace(pat, ' ');
-// 	    });
-
-// 	    botData.allPostsWordList[i] = currentTweet.split(excludeNonAlpha);
-//     	var excludedElements = [
-// 			'and','the', 'just', 'want', 'don', 'bed', 'sleep'
-// 		];
-    
-//     	botData.allPostsWordList[i] = _.reject(botData.allPostsWordList[i], function(w) {
-// 			return _.contains(excludedElements, w);
-// 		});
-
-//     	// Clean up any empty elements
-//     	for (j = botData.allPostsWordList[i].length; j >= 0; j--) {
-//     		if (botData.allPostsWordList[i][j] == '' || botData.allPostsWordList[i][j] == undefined) {
-//     			botData.allPostsWordList[i].splice(j, 1);
-//     		};
-//     	}
-
-//   		botData.allParsedTweets[i] = botData.allPosts[i];
-//     };
-
-// 	// Word List Cleanup
-//     for (k = botData.allPostsWordList.length - 1; k >= 0; k--) {
-// 		// If word list is one or less, discard it.
-// 		// The hope here is two or more tags = greater accuracy in terms of photo matching tweet.
-//     	if (botData.allPostsWordList[k].length <= 1) {
-// 			botData.allPostsWordList.splice(k, 1);
-// 			botData.allParsedTweets.splice(k, 1);
-//     	};
-//     }
-
-//     // allParsedTweets
-//     // allPosts xxx
-//     // allPostsWordList
-
-//     cb(null, botData);
-// };
-
-
-// getAllWordData = function(botData, cb) {
-// 	console.log('--Get All Words');
-// 	botData.counter = 0;
-
-// 	getWordListSequence = function(pos) {
-// 	    async.mapSeries(botData.allPostsWordList[pos], getWordData, function(err, results){
-// 			botData.wordList[pos] = results;
-//    			botData.counter++;
-
-//    			if (botData.counter == botData.allPostsWordList.length) {
-// 				cb(err, botData);
-//    			} else {
-//    				getWordListSequence(botData.counter);
-//    			}
-// 	    }); 
-// 	}
-
-// 	getWordListSequence(botData.counter);
-
-//     // allParsedTweets
-//     // allPosts xxx
-//     // allPostsWordList
-//     // wordList	
-// }
-
-
-// getWordData = function(word, cb) {
-//     var client = new Client();
-
-//     var wordnikWordURLPart1   = 'http://api.wordnik.com:80/v4/word.json/';
-//     var wordnikWordURLPart2   = '/definitions?limit=1&includeRelated=false&useCanonical=true&includeTags=false&api_key=';
-
-//     var args = {
-// 		headers: {'Accept':'application/json'}
-//     };
-
-//     var wordnikURL = wordnikWordURLPart1 + word.toLowerCase() + wordnikWordURLPart2 + wordnikKey;
-
-//     client.get(wordnikURL, args, function (data, response) {
-// 		if (response.statusCode === 200) {
-// 			var result = JSON.parse(data);
-// 			if (result.length) {
-// 				cb(null, result);
-// 			} else {
-// 				cb(null, null);
-// 			}
-// 		} else {
-// 			cb(null, null);
-// 		}
-//     });
-// };
-
-// findNouns = function(botData, cb) {
-// 	console.log('--Find Nouns');
-
-// 	for (i = 0; i < botData.wordList.length; i++) {
-// 	    botData.nounList[i] = [];
-
-// 	    _.each(botData.wordList[i], function(wordInfo) {
-// 	    	if (wordInfo != null) {
-// 				var word            = wordInfo[0].word;
-// 				var partOfSpeech    = wordInfo[0].partOfSpeech;
-
-// 				if (partOfSpeech == 'noun' || partOfSpeech == 'proper-noun') {
-// 		        	botData.nounList[i].push(word);
-// 				} 
-// 			} 
-// 	    });
-// 	};
-
-// 	// Drop any tweet with no nouns or greater than four
-//     for (j = botData.nounList.length - 1; j >= 0; j--) {
-//     	if ((botData.nounList[j].length < 2) || (botData.nounList[j].length > 7)) {
-//     		botData.nounList.splice(j, 1);
-//     		botData.allParsedTweets.splice(j, 1);
-//     	};
-//     }
-
-//     for (k = 0; k < botData.nounList.length; k++) {
-// 		botData.allFlickrSearchStrings[k] = botData.nounList[k].join('%20');
-//     };
-
-// 	// allParsedTweets
-//     // allPosts xxx
-//     // allPostsWordList xxx
-//     // wordList xxx
-//     // nounList 
-//     // allFlickrSearchStrings
-
-//     cb(null, botData);
-// }
+	console.log('---------------------------');
+	console.log(botData.aPhrases);
+	console.log('---------------------------');
+	console.log(botData.bPhrases);
+	console.log('---------------------------');
 
 
 
-// randomSort = function() {
-// 	var sortOptions = [
-// 		// 'interestingness-desc', 
-// 		'relevance'
-// 		];
-
-// 	var totalSorts = sortOptions.length;
-// 	var randomSort = Math.floor(Math.random() * totalSorts);
-	
-// 	return sortOptions[randomSort];
-// }
-
-
-
-// formatTweet = function(botData, cb) {
-// 	console.log('--Format Tweet');
-
-// 	// If we have one or more images
-// 	if (botData.allFlickrURLs.length > 0) {
-		
-// 		// Clean up. Remove if no image size exists.
-// 		for (i = botData.allParsedTweets.length; i >= 0; i--) {
-// 			if (botData.allFlickrURLs[i] == '') {
-//   				botData.allParsedTweets.splice(i, 1);
-//   				botData.allFlickrURLs.splice(i, 1);
-//   				botData.allFlickrSearchStrings.splice(i, 1);
-//   				botData.allFlickrPages.splice(i, 1);
-//   				botData.allFlickrTitles.splice(i, 1);
-//   				botData.titleMatchArray.splice(i, 1);
-// 			}
-// 		}
-
-// 		// Best match info (where one+ word from search string appears in title)
-// 		var bestMatchImage = [],
-// 			bestMatchText = [],
-// 			bestMatchSearch = [],
-// 			bestMatchTitle = []
-// 			bestMatchPage = [];
-
-// 		for (x = 0; x < botData.allParsedTweets.length; x++) {
-// 			if (botData.titleMatchArray[x] > 0) {
-// 				bestMatchImage.push(botData.allFlickrURLs[x]);
-// 				bestMatchText.push(botData.allParsedTweets[x]);
-// 				bestMatchSearch.push(botData.allFlickrSearchStrings[x]);
-// 				bestMatchTitle.push(botData.allFlickrTitles[x]);
-// 				bestMatchPage.push(botData.allFlickrPages[x])
-// 			}
-// 		}
-
-// 		// If we have any best matches...
-// 		if (bestMatchImage.length > 0) {
-// 			console.log("Best Match Found!");
-// 			var randomPos = Math.floor(Math.random() * bestMatchImage.length);
-
-// 			botData.finalTweet = bestMatchText[randomPos];
-// 			botData.finalPic = bestMatchImage[randomPos];
-
-// 			console.log("Search String: " + bestMatchSearch[randomPos]);
-// 			console.log("Tweet:         " + botData.finalTweet);
-// 			console.log("Pic:           " + bestMatchPage[randomPos]);
-
-// 		// Otherwise, let's just roll the dice on the whole set.
-// 		} else {
-// 			console.log("No best match. Using what we got...");
-// 			var randomPos = Math.floor(Math.random() * botData.allParsedTweets.length);
-
-// 			botData.finalTweet = botData.allParsedTweets[randomPos];
-// 			botData.finalPic = botData.allFlickrURLs[randomPos];
-
-// 			console.log("Search String: " + botData.allFlickrSearchStrings[randomPos]);
-// 			console.log("Tweet:         " + botData.finalTweet);
-// 			console.log("Pic:           " + botData.allFlickrPages[randomPos]);
-// 		};
-
-// 		tp.update({
-// 		    status: botData.finalTweet,
-// 		    media: request(botData.finalPic)
-// 		},
-// 		function (err, result) {
-// 		    if (err) {
-// 		        return console.error('Nope!', err);
-// 		    } else {
-// 		    console.log("Successful post!");		    	
-// 		    }
-// 		});
-// 	} else {
-// 		cb("We don't have any Flickr images at all. Abort mission!", botData);
-// 	}
-// }
+}
 
 
 // ===========================
@@ -310,7 +333,13 @@ run = function() {
 	console.log("========= Starting! =========");
 
     async.waterfall([
-		getPublicTweet, 
+    	getRandomWords,
+    	cleanRandomWords,
+    	getAllRhymes,
+    	createRhymeLists,
+    	setRhymeSchemes,
+		getAllPublicTweets,
+		theNextThing 
 		// extractWordsFromTweet,
 		// getAllWordData, 
 		// findNouns,
@@ -321,7 +350,7 @@ run = function() {
     ],
     function(err, botData) {
 		if (err) {
-			console.log('There was an error posting to Twitter: ', err);
+			console.log('Error: ', err);
 		}
     });
 }
