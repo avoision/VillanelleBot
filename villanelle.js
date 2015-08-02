@@ -6,24 +6,13 @@ var wordfilter    = require('wordfilter');
 var request       = require('request');
 var emojiRegex 	  = require('emoji-regex');
 
-// var t = new Twit({
-//     consumer_key: 			process.env.VILLANELLE_TWIT_CONSUMER_KEY,
-//     consumer_secret: 		process.env.VILLANELLE_TWIT_CONSUMER_SECRET,
-//     access_token: 			process.env.VILLANELLE_TWIT_ACCESS_TOKEN,
-//     access_token_secret: 	process.env.VILLANELLE_TWIT_ACCESS_TOKEN_SECRET
-// });
-
 var t = new Twit({
     consumer_key: 			process.env.VILLANELLE_TWIT_CONSUMER_KEY,
     consumer_secret: 		process.env.VILLANELLE_TWIT_CONSUMER_SECRET,
     app_only_auth: 			true
-    // access_token: 			process.env.VILLANELLE_TWIT_ACCESS_TOKEN,
-    // access_token_secret: 	process.env.VILLANELLE_TWIT_ACCESS_TOKEN_SECRET
 });
-   
 
 var wordnikKey = 			process.env.VILLANELLE_WORDNIK_KEY;
-
 
 getRandomWords = function(cb) {
 	console.log("========= Get Random Words =========");	
@@ -39,12 +28,6 @@ getRandomWords = function(cb) {
 		bPhrases: [],
 		aPhrasesQuotaMet: false,
 		bPhrasesQuotaMet: false
-		// allPosts: [],
-		// allParsedTweets: [],
-		// allPostsWordList: [],
-		// wordList: [],
-		// nounList: [],
-		// titleMatchArray: []
 	};
 
     var client = new Client();
@@ -296,33 +279,90 @@ getTweetsByWord = function(word, cb) {
 };
 
 
-theNextThing = function(botData, cb) {
+gatherAndCleanPhrases = function(botData, cb) {
 	// Clean up and transfer workable A phrases
 	for (var i = 0; i < botData.aTweetsFull.length; i++) {
 	    if (botData.aTweetsFull[i].length > 0) {
 	        for (var j = 0; j < botData.aTweetsFull[i].length; j++) {
-				botData.aPhrases.push(botData.aTweetsFull[i][j]); 
+	        	// Make sure it doesn't start with a number,
+	        	if (/[0-9]+/.test(botData.aTweetsFull[i][j][0]) == false) {
+	        		var phrase = botData.aTweetsFull[i][j][0].toUpperCase() + botData.aTweetsFull[i][j].substr(1);
+					botData.aPhrases.push(phrase); 	        	
+	        	}
 	        }
 	    }
 	}	
 
+	botData.aPhrases = _.unique(botData.aPhrases);
+
 	// Clean up and transfer workable B phrases
-	for (var x = 0; x < botData.aTweetsFull.length; x++) {
-	    if (botData.aTweetsFull[x].length > 0) {
-	        for (var y = 0; y < botData.aTweetsFull[x].length; y++) {
-				botData.aPhrases.push(botData.aTweetsFull[x][y]); 
+	for (var x = 0; x < botData.bTweetsFull.length; x++) {
+	    if (botData.bTweetsFull[x].length > 0) {
+	        for (var y = 0; y < botData.bTweetsFull[x].length; y++) {
+				// Make sure it doesn't start with a number,
+	        	if (/[0-9]+/.test(botData.bTweetsFull[x][y][0]) == false) {
+	        		var phrase = botData.bTweetsFull[x][y][0].toUpperCase() + botData.bTweetsFull[x][y].substr(1);
+					botData.bPhrases.push(phrase); 
+				}
 	        }
 	    }
 	}
+	
+	botData.bPhrases = _.unique(botData.bPhrases);
 
+	cb(null, botData);
+}
+
+checkRequirements = function(botData, cb) {
+	if (botData.aPhrases.length >= 7) {
+		botData.aPhrasesQuotaMet = true;
+	}
+
+	if (botData.bPhrases.length >= 6) {
+		botData.bPhrasesQuotaMet = true;
+	}
+
+	if ((botData.aPhrasesQuotaMet) && (botData.bPhrasesQuotaMet)) {
+		cb(null, botData);
+	} else {
+		console.log("Not enough A/B phrases");
+		botData.aPhrasesQuotaMet = false;
+		botData.bPhrasesQuotaMet = false;
+		setRhymeSchemes(botData);
+	}
+}
+
+formatPoem = function(botData, cb) {
 	console.log('---------------------------');
-	console.log(botData.aPhrases);
+	var A1, A2, 
+		a1, a2, a3, a4, a5,
+		b1, b2, b3, b4, b5, b6;
+	
+	A1 = botData.aPhrases[0];
+	A2 = botData.aPhrases[1];
+	a1 = botData.aPhrases[2];
+	a2 = botData.aPhrases[3];
+	a3 = botData.aPhrases[4];
+	a4 = botData.aPhrases[5];
+	a5 = botData.aPhrases[6];
+
+	b1 = botData.bPhrases[0];
+	b2 = botData.bPhrases[1];
+	b3 = botData.bPhrases[2];
+	b4 = botData.bPhrases[3];
+	b5 = botData.bPhrases[4];
+	b6 = botData.bPhrases[5];
+
+	var villanelle = [A1, b1, A2, null, a1, b2, A1, null, a2, b3, A2, null, a3, b4, A1, null, a4, b5, A2, null, a5, b6, A1, A2];
+
+	for (var i = 0; i < villanelle.length; i++) {
+		if (villanelle[i] !== null) {
+			console.log(villanelle[i]);
+		} else {
+			console.log('\n');
+		}
+	}
 	console.log('---------------------------');
-	console.log(botData.bPhrases);
-	console.log('---------------------------');
-
-
-
 }
 
 
@@ -339,7 +379,9 @@ run = function() {
     	createRhymeLists,
     	setRhymeSchemes,
 		getAllPublicTweets,
-		theNextThing 
+		gatherAndCleanPhrases,
+		checkRequirements,
+		formatPoem
 		// extractWordsFromTweet,
 		// getAllWordData, 
 		// findNouns,

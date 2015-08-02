@@ -2,11 +2,40 @@ Primary Word should have at least six rhyming words
 Secondary Word should have at least six rhyming words
 
 
-A1 sentence
-A2 sentence
+A1 
+A2 
 
 5 a
 6 b
+
+7 a, 6 b
+---------------------------
+
+A1
+b1
+A2
+
+a1
+b2
+A1
+
+a2
+b3
+A2
+
+a3
+b4
+A1
+
+a4
+b5
+A2
+
+a5
+b6
+A1
+A2
+
 
 
 1) Get list of random words from Wordnik
@@ -71,6 +100,41 @@ botData.aPhrases = [
 	'Anyway to distract and sedate.',
 	'I forgot how much I love George Strait.' 
 ]
+
+
+[ 'I smell like kool aid.',
+  'Buffeted.',
+  'Fitness, cade???',
+  'Why hasn\'t anybody made a slip n slide at cascade?',
+  'yeah///how do I downgrade?',
+  'Heya tazaker el safar be balash le sherif fayed..?',
+  'SMOKE GRANADE!',
+  'Yield thee, so well this day thou hast purveyed.',
+  'Yield thee, so well this day thou hast purveyed.',
+  'Yield thee, so well this day thou hast purveyed.',
+  'Schade.' ]
+---------------------------
+[ 'TNA  and Indy guys all taking the bait.',
+  'call me jail bait!!',
+  'Big fish never take the bate...',
+  'Basically Marvel is Jonathan Chait.',
+  'Let me see your eyes dilate.',
+  'Four hundred twenty eight!',
+  'I was just compared to pointer and I\'m elate.',
+  'Luck is a misjudgment. There is only fate.',
+  'Wait everybody bailing out in bfast fete?',
+  'Vid up in like 5 mins! Sorry its up late!',
+  'Next is queen mate.',
+  'Eat healthy ! No guilt even if you overate!',
+  'So who asked MayD to plait??',
+  'Don\'t hate, procreate.',
+  'Mignon\'s going to get sued at this rate.',
+  'take a picture you could never recreate.',
+  'Anyway to distract and sedate.',
+  '3. What\'s your best trait?' ]
+
+
+
 
 ---------------------------
 
