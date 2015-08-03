@@ -193,7 +193,11 @@ createRhymeLists = function(botData, cb) {
 
 		// If more than desired number of rhymes, randomize and trim
 		if (rhymingWordsArray[x].length > desiredNumberOfRhymes) {
+			// Keep track of the first word
+			var firstWord = rhymingWordsArray[0];
+
 			_.shuffle(rhymingWordsArray[x]);
+			rhymingWordsArray.unshift(firstWord);
 			rhymingWordsArray[x] = rhymingWordsArray[x].slice(0, desiredNumberOfRhymes);
 		}
 	}
@@ -233,6 +237,10 @@ getAllPublicTweets = function(botData, cb) {
 	    		if (botData.counter == botData.rhymingWordsArray.length) {
 	    			cb(null, botData);
 	    		} else {
+
+// console.log("Results: " + JSON.stringify(results));
+// console.log(">>>");
+
 	    			getAllTweetsSequence(botData.counter);
 	    		}		
 	    	}	
@@ -311,8 +319,6 @@ getTweetsByWord = function(word, cb) {
 gatherAndCleanPhrases = function(botData, cb) {
 	var rhymesData = botData.rhymeSchemeArray;
 
-	console.log(JSON.stringify(rhymesData));
-
 	// We have a lot of empty arrays in botData.rhymeSchemeArray. Remove empties.
 	for (var i = rhymesData.length - 1; i >= 0; i--) {
 	    if (rhymesData[i].length > 0) {
@@ -331,6 +337,8 @@ gatherAndCleanPhrases = function(botData, cb) {
 	        }
 	    }
 	};
+
+	console.log(JSON.stringify(rhymesData));
 
 	botData.rhymeSchemeArray = rhymesData;
 	cb(null, botData);
