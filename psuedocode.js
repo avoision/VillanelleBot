@@ -134,17 +134,3 @@ botData.aPhrases = [
   '3. What\'s your best trait?' ]
 
 
-
-
----------------------------
-
-
-Clean up and ignore tweets like this:
----------------------------
-'Doff tried and true together with nonmandatory routinized ads without dealplus: SwRtgriKh'
-'Pass999 000-m31 oral examination rote guides: uWF'
-'Doff a Mind Before Going to Reach Wholesale Handbags...SAbRt',
-'Designer Soft Rig - Doff the Best for Your Accessible...sXVZ',
-
-'"We  rote our first blog post before we wrote our first line of code." -Jon Mille'
-
