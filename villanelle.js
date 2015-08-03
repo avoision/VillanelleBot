@@ -204,7 +204,7 @@ createRhymeLists = function(botData, cb) {
 
 	// Avoid hitting rate limit in a single call. Must be lower than 450 (22 arrays with 20 items each)
 	
-maxArrays = 5;	// TESTING ONLY - REMOVE THIS!
+maxArrays = 7;	// TESTING ONLY - REMOVE THIS!
 
 	if (rhymingWordsArray.length > maxArrays) {
 		_.shuffle(rhymingWordsArray);
@@ -281,7 +281,7 @@ getTweetsByWord = function(word, cb) {
 							var regex = new RegExp(word + "[ ,?!.]+$");
 							if (regex.test(currentTweet)) {
 								// Keep under 50 characters in length;
-								if (currentTweet.length <= 55) {
+								if ((currentTweet.length <= 55) && (currentTweet.length >= 20)) {
 									var tweetData = {
 										tweet: data.statuses[i].text,
 										tweetID: currentTweetID,
@@ -326,7 +326,7 @@ gatherAndCleanPhrases = function(botData, cb) {
 	        	if (rhymesData[i][j].length > 0) {	
 		        	for (var k = rhymesData[i][j].length - 1; k >= 0; k-- ) {
 		        		// Starts with a number? If so, remove it.
-		        		if (/[0-9]+/.test(rhymesData[i][j][k].tweet.charAt(0))) {
+		        		if (/[a-zA-Z]+/.test(rhymesData[i][j][k].tweet.charAt(0)) == false) {
 							rhymesData[i][j].splice(k, 1);
 		        		}
 			        }
@@ -336,6 +336,13 @@ gatherAndCleanPhrases = function(botData, cb) {
 			    }
 	        }
 	    }
+	};
+
+	// Additional check for empty arrays
+	for (var x = rhymesData.length - 1; x >= 0; x--) {
+		if (rhymesData[x].length == 0) {
+			rhymesData.splice(x, 1);
+		}
 	};
 
 	console.log(JSON.stringify(rhymesData));
@@ -401,8 +408,31 @@ checkRequirements = function(botData, cb) {
 formatPoem = function(botData, cb) {
 	console.log('---------------------------');
 
-	console.log("A Phrases: " + JSON.stringify(botData.aPhrases));
-	console.log("B Phrases: " + JSON.stringify(botData.bPhrases));
+	// console.log("A Phrases: " + JSON.stringify(botData.aPhrases));
+	// console.log("B Phrases: " + JSON.stringify(botData.bPhrases));
+
+	getTitle = function() {
+		var theTitle = "",
+			titleArray = _.union(botData.aPhrases, botData.bPhrases);
+		
+		titleArray.splice(0, 2);
+		_.shuffle(titleArray);
+
+		for (var x = 0; x < titleArray; x++) {
+			if (titleArray[x].tweet.length <= 33) {
+				theTitle = titleArray[x].tweet;
+				break;
+			}
+		}
+
+		if (theTitle == "") {
+			var randomPos = Math.floor(Math.random() * titleArray.length);
+			theTitle = titleArray[randomPos].tweet;
+		}
+
+		return theTitle;
+	}
+
 
 	var A1, A2, 
 		a1, a2, a3, a4, a5,
@@ -426,6 +456,10 @@ formatPoem = function(botData, cb) {
 	var villanelle = [A1, b1, A2, null, a1, b2, A1, null, a2, b3, A2, null, a3, b4, A1, null, a4, b5, A2, null, a5, b6, A1, A2];
 
 	console.log('---------------------------');
+
+	console.log(getTitle());
+	console.log('');
+
 	for (var i = 0; i < villanelle.length; i++) {
 		if (villanelle[i] !== null) {
 			console.log(villanelle[i]);
