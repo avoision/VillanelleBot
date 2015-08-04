@@ -5,12 +5,22 @@ var async         = require('async');
 var wordfilter    = require('wordfilter');
 var request       = require('request');
 var emojiRegex 	  = require('emoji-regex');
+var tumblr 		  = require('tumblr.js');
 
 var t = new Twit({
     consumer_key: 			process.env.VILLANELLE_TWIT_CONSUMER_KEY,
     consumer_secret: 		process.env.VILLANELLE_TWIT_CONSUMER_SECRET,
     app_only_auth: 			true
 });
+
+
+var tumblrClient = tumblr.createClient({
+  consumer_key: 			process.env.VILLANELLE_TUMBLR_CONSUMER_KEY,
+  consumer_secret: 			process.env.VILLANELLE_TUMBLR_CONSUMER_SECRET,
+  token: 					process.env.VILLANELLE_TUMBLR_ACCESS_TOKEN,
+  token_secret: 			process.env.VILLANELLE_TUMBLR_ACCESS_TOKEN_SECRET
+});
+
 
 var wordnikKey = 			process.env.VILLANELLE_WORDNIK_KEY;
 
@@ -204,7 +214,7 @@ createRhymeLists = function(botData, cb) {
 
 	// Avoid hitting rate limit in a single call. Must be lower than 450 (22 arrays with 20 items each)
 	
-maxArrays = 7;	// TESTING ONLY - REMOVE THIS!
+maxArrays = 10;	// TESTING ONLY - REMOVE THIS!
 
 	if (rhymingWordsArray.length > maxArrays) {
 		_.shuffle(rhymingWordsArray);
@@ -325,8 +335,9 @@ gatherAndCleanPhrases = function(botData, cb) {
 	        for (var j = rhymesData[i].length - 1; j >= 0; j--) {
 	        	if (rhymesData[i][j].length > 0) {	
 		        	for (var k = rhymesData[i][j].length - 1; k >= 0; k-- ) {
-		        		// Starts with a number? If so, remove it.
-		        		if (/[a-zA-Z]+/.test(rhymesData[i][j][k].tweet.charAt(0)) == false) {
+		        		// Starts with a non-letter? Or contains hard return? Remove it.
+		        		if ((/[a-zA-Z]+/.test(rhymesData[i][j][k].tweet.charAt(0)) == false)
+		        			|| (/\n/).test(rhymesData[i][j][k].tweet)) {
 							rhymesData[i][j].splice(k, 1);
 		        		}
 			        }
@@ -367,6 +378,7 @@ checkRequirements = function(botData, cb) {
 
 				for (var a = 0; a <botData.aPhrases.length; a++) {
 					botData.aPhrases[a] = botData.aPhrases[a][0];
+					botData.aPhrases[a].tweet = botData.aPhrases[a].tweet.charAt(0).toUpperCase() + botData.aPhrases[a].tweet.slice(1);
 				}
 
 				botData.aPhrasesQuotaMet = true;
@@ -378,17 +390,38 @@ checkRequirements = function(botData, cb) {
 		// Local "B Phrases." We need 6.
 		if (botData.aPhrasesQuotaMet) {
 			for (var j = 0; j < rhymeSets.length; j++) {
+
+				var duplicatesExist = false;
+
 				if (rhymeSets[j].length >= 6) {
 					botData.bPhrases = rhymeSets[j];
-					_.shuffle(botData.bPhrases);
-					botData.bPhrases = botData.bPhrases.slice(0, 6);
 
-					for (var b = 0; b <botData.bPhrases.length; b++) {
+					// for (var b = 0; b <botData.bPhrases.length; b++) {
+
+					// Check if any b phrases match a phrases.
+					for (var b = botData.bPhrases.length - 1; b >= 0; b--) {
 						botData.bPhrases[b] = botData.bPhrases[b][0];
+						botData.bPhrases[b].tweet = botData.bPhrases[b].tweet.charAt(0).toUpperCase() + botData.bPhrases[b].tweet.slice(1);
+
+						for (var x = 0; x < botData.aPhrases.length; x++) {
+							if (botData.bPhrases[b].tweet == botData.aPhrases[x].tweet) {
+								duplicatesExist = true;
+								break;		
+							}
+						}
+
+						if (duplicatesExist) {
+							botData.bPhrases.splice(b, 1);
+						}
 					}
 
-					botData.bPhrasesQuotaMet = true;
-					break;
+					if (botData.bPhrases.length >= 6) {					
+
+						_.shuffle(botData.bPhrases);
+						botData.bPhrases = botData.bPhrases.slice(0, 6);
+						botData.bPhrasesQuotaMet = true;
+						break;
+					};
 				}
 			}
 
@@ -438,37 +471,82 @@ formatPoem = function(botData, cb) {
 		a1, a2, a3, a4, a5,
 		b1, b2, b3, b4, b5, b6;
 	
-	A1 = botData.aPhrases[0].tweet;
-	A2 = botData.aPhrases[1].tweet;
-	a1 = botData.aPhrases[2].tweet;
-	a2 = botData.aPhrases[3].tweet;
-	a3 = botData.aPhrases[4].tweet;
-	a4 = botData.aPhrases[5].tweet;
-	a5 = botData.aPhrases[6].tweet;
+	A1 = botData.aPhrases[0];
+	A2 = botData.aPhrases[1];
+	a1 = botData.aPhrases[2];
+	a2 = botData.aPhrases[3];
+	a3 = botData.aPhrases[4];
+	a4 = botData.aPhrases[5];
+	a5 = botData.aPhrases[6];
 
-	b1 = botData.bPhrases[0].tweet;
-	b2 = botData.bPhrases[1].tweet;
-	b3 = botData.bPhrases[2].tweet;
-	b4 = botData.bPhrases[3].tweet;
-	b5 = botData.bPhrases[4].tweet;
-	b6 = botData.bPhrases[5].tweet;
+	b1 = botData.bPhrases[0];
+	b2 = botData.bPhrases[1];
+	b3 = botData.bPhrases[2];
+	b4 = botData.bPhrases[3];
+	b5 = botData.bPhrases[4];
+	b6 = botData.bPhrases[5];
 
-	var villanelle = [A1, b1, A2, null, a1, b2, A1, null, a2, b3, A2, null, a3, b4, A1, null, a4, b5, A2, null, a5, b6, A1, A2];
+	var villanelle =
+		+ "<p class=\"tercet\"><a href=\"" + A1.url + "\">" + A1.tweet + "</a><br />"
+		+ "<a href=\"" + b1.url + "\">" + b1.tweet + "</a><br />"
+		+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
 
-	console.log('---------------------------');
+		+ "<p class=\"tercet\"><a href=\"" + a1.url + "\">" + a1.tweet + "</a><br />"
+		+ "<a href=\"" + b2.url + "\">" + b2.tweet + "</a><br />"
+		+ "<a href=\"" + A1.url + "\">" + A1.tweet + "</a></p>"
 
-	console.log(getTitle());
-	console.log('');
+		+ "<p class=\"tercet\"><a href=\"" + a2.url + "\">" + a2.tweet + "</a><br />"
+		+ "<a href=\"" + b3.url + "\">" + b3.tweet + "</a><br />"
+		+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
 
-	for (var i = 0; i < villanelle.length; i++) {
-		if (villanelle[i] !== null) {
-			console.log(villanelle[i]);
-		} else {
-			console.log('');
-		}
-	}
-	console.log('---------------------------');
+		+ "<p class=\"tercet\"><a href=\"" + a3.url + "\">" + a3.tweet + "</a><br />"
+		+ "<a href=\"" + b4.url + "\">" + b4.tweet + "</a><br />"
+		+ "<a href=\"" + A1.url + "\">" + A1.tweet + "</a></p>"
+
+		+ "<p class=\"tercet\"><a href=\"" + a4.url + "\">" + a4.tweet + "</a><br />"
+		+ "<a href=\"" + b5.url + "\">" + b5.tweet + "</a><br />"
+		+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
+
+		+ "<p class=\"quatrain\"><a href=\"" + a5.url + "\">" + a5.tweet + "</a><br />"
+		+ "<a href=\"" + b6.url + "\">" + b6.tweet + "</a><br />"
+		+ "<a href=\"" + A1.url + "\">" + A1.tweet + "</a><br />"
+		+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
+
+		+ "<p class=\"credits\">This <a href=\"https://en.wikipedia.org/wiki/Villanelle\">villanelle</a> was created by: " 
+			+ "<a href=\"http://twitter.com/" + A1.userId + "\">@" + A1.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + A2.userId + "\">@" + A2.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + a1.userId + "\">@" + a1.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + a2.userId + "\">@" + a2.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + a3.userId + "\">@" + a3.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + a4.userId + "\">@" + a4.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + a5.userId + "\">@" + a5.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + b1.userId + "\">@" + b1.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + b2.userId + "\">@" + b2.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + b3.userId + "\">@" + b3.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + b4.userId + "\">@" + b4.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + b5.userId + "\">@" + b5.userScreenName + "</a>, and "
+			+ "<a href=\"http://twitter.com/" + b6.userId + "\">@" + b6.userScreenName + "</a>."
+			+ "</p>"
+
+		+ "<p class=\"attribution\">Created by <a href=\"http://twitter.com/avoision\">@avoision</a></p>";
+
+	cb(null, villanelle);
 }
+
+// Make it so
+publishPoem = function(villanelle, cb) {
+	var blogName = "villanellebot",
+		options = {
+			title: getTitle(),
+			body: villanelle
+		}
+
+	tumblrClient.text(blogName, options, function(err, success) {
+		console.log(err);
+		console.log(success);
+	});
+}
+
 
 
 // ===========================
@@ -478,14 +556,15 @@ run = function() {
 	console.log("========= Starting! =========");
 
     async.waterfall([
-    	getRandomWords,
-    	cleanRandomWords,
-    	getAllRhymes,
-    	createRhymeLists,
+		getRandomWords,
+		cleanRandomWords,
+		getAllRhymes,
+		createRhymeLists,
 		getAllPublicTweets,
 		gatherAndCleanPhrases,
 		checkRequirements,
-		formatPoem
+		formatPoem,
+		publishPoem
     ],
     function(err, botData) {
 		if (err) {
@@ -524,7 +603,7 @@ run = function() {
 //   catch (e) {
 //     console.log(e);
 //   }
-// }, 60000 * 30);
+// }, 60000 * 15);
 
 run();
 
