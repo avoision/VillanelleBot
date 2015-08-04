@@ -214,7 +214,7 @@ createRhymeLists = function(botData, cb) {
 
 	// Avoid hitting rate limit in a single call. Must be lower than 450 (22 arrays with 20 items each)
 	
-maxArrays = 10;	// TESTING ONLY - REMOVE THIS!
+maxArrays = 5;	// TESTING ONLY - REMOVE THIS!
 
 	if (rhymingWordsArray.length > maxArrays) {
 		_.shuffle(rhymingWordsArray);
@@ -337,7 +337,7 @@ gatherAndCleanPhrases = function(botData, cb) {
 		        	for (var k = rhymesData[i][j].length - 1; k >= 0; k-- ) {
 		        		// Starts with a non-letter? Or contains hard return? Remove it.
 		        		if ((/[a-zA-Z]+/.test(rhymesData[i][j][k].tweet.charAt(0)) == false)
-		        			|| (/\n/).test(rhymesData[i][j][k].tweet)) {
+		        			|| (/[\"\n]+/).test(rhymesData[i][j][k].tweet)) {
 							rhymesData[i][j].splice(k, 1);
 		        		}
 			        }
@@ -351,6 +351,12 @@ gatherAndCleanPhrases = function(botData, cb) {
 
 	// Additional check for empty arrays
 	for (var x = rhymesData.length - 1; x >= 0; x--) {
+		for (var y = rhymesData[x].length - 1; y >= 0; y--) {
+			if (rhymesData[x][y].length == 0) {
+				rhymesData[x].splice(y, 1);
+			}
+		}
+
 		if (rhymesData[x].length == 0) {
 			rhymesData.splice(x, 1);
 		}
@@ -486,8 +492,10 @@ formatPoem = function(botData, cb) {
 	b5 = botData.bPhrases[4];
 	b6 = botData.bPhrases[5];
 
+	var poemTitle = getTitle();
+
 	var villanelle =
-		+ "<p class=\"tercet\"><a href=\"" + A1.url + "\">" + A1.tweet + "</a><br />"
+		"<p class=\"tercet\"><a href=\"" + A1.url + "\">" + A1.tweet + "</a><br />"
 		+ "<a href=\"" + b1.url + "\">" + b1.tweet + "</a><br />"
 		+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
 
@@ -512,38 +520,41 @@ formatPoem = function(botData, cb) {
 		+ "<a href=\"" + A1.url + "\">" + A1.tweet + "</a><br />"
 		+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
 
-		+ "<p class=\"credits\">This <a href=\"https://en.wikipedia.org/wiki/Villanelle\">villanelle</a> was created by: " 
-			+ "<a href=\"http://twitter.com/" + A1.userId + "\">@" + A1.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + A2.userId + "\">@" + A2.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + a1.userId + "\">@" + a1.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + a2.userId + "\">@" + a2.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + a3.userId + "\">@" + a3.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + a4.userId + "\">@" + a4.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + a5.userId + "\">@" + a5.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + b1.userId + "\">@" + b1.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + b2.userId + "\">@" + b2.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + b3.userId + "\">@" + b3.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + b4.userId + "\">@" + b4.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + b5.userId + "\">@" + b5.userScreenName + "</a>, and "
-			+ "<a href=\"http://twitter.com/" + b6.userId + "\">@" + b6.userScreenName + "</a>."
+		+ "<p class=\"credits\">This <a href=\"https://en.wikipedia.org/wiki/Villanelle\">villanelle</a> was made with tweets by: " 
+			+ "<a href=\"http://twitter.com/" + A1.userID + "\">@" + A1.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + A2.userID + "\">@" + A2.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + a1.userID + "\">@" + a1.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + a2.userID + "\">@" + a2.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + a3.userID + "\">@" + a3.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + a4.userID + "\">@" + a4.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + a5.userID + "\">@" + a5.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + b1.userID + "\">@" + b1.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + b2.userID + "\">@" + b2.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + b3.userID + "\">@" + b3.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + b4.userID + "\">@" + b4.userScreenName + "</a>, "
+			+ "<a href=\"http://twitter.com/" + b5.userID + "\">@" + b5.userScreenName + "</a>, and "
+			+ "<a href=\"http://twitter.com/" + b6.userID + "\">@" + b6.userScreenName + "</a>."
 			+ "</p>"
 
-		+ "<p class=\"attribution\">Created by <a href=\"http://twitter.com/avoision\">@avoision</a></p>";
+		+ "<p class=\"attribution\">Coding: <a href=\"http://twitter.com/avoision\">@avoision</a></p>";
 
-	cb(null, villanelle);
+	cb(null, poemTitle, villanelle);
 }
 
 // Make it so
-publishPoem = function(villanelle, cb) {
+publishPoem = function(poemTitle, villanelle, cb) {
 	var blogName = "villanellebot",
 		options = {
-			title: getTitle(),
+			title: poemTitle,
 			body: villanelle
 		}
 
 	tumblrClient.text(blogName, options, function(err, success) {
-		console.log(err);
-		console.log(success);
+		if (!err) {
+			console.log("Success: " + success);			
+		} else {
+			console.log("Errors: " + err);
+		}
 	});
 }
 
@@ -596,14 +607,11 @@ run = function() {
 // 	})
 // }
 
-// setInterval(function() {
-//   try {
-//     run();
-//   }
-//   catch (e) {
-//     console.log(e);
-//   }
-// }, 60000 * 15);
-
-run();
-
+setInterval(function() {
+  try {
+    run();
+  }
+  catch (e) {
+    console.log(e);
+  }
+}, 60000 * 15);
