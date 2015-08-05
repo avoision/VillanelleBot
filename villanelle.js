@@ -170,7 +170,7 @@ createRhymeLists = function(botData, cb) {
 		minWordLength = 3,
 		maxWordLength = 7,
 		maxArrays = 16,
-		desiredNumberOfRhymes = 30;
+		desiredNumberOfRhymes = 20;
 	
 	for (var i = 0; i < botData.allWords.length; i++) {
 		rhymingWordsArray[i] = [];
@@ -301,10 +301,8 @@ getTweetsByWord = function(word, cb) {
 										userScreenName: currentUserScreenName,
 										url: "http://twitter.com/" + currentUserScreenName + "/status/" + currentTweetID
 									};
-
 									twitterResults.push(tweetData);
-
-									console.log("Accepted: " + currentTweet);
+									console.log("+");
 								} else {
 									console.log("Rejected: " + currentTweet);
 								}
@@ -597,29 +595,6 @@ run = function() {
 		}
     });
 }
-
-// ===========================
-// Cleanup
-// ===========================
-// iReallyReallyWantToDeleteAllTweets = function() {
-// 	t.get('statuses/user_timeline', {screen_name: 'thedesirebot', count: 10}, function(err, data, response) {
-// 		if (!err) {
-// 			var liveTweetsArray = [];
-			
-// 			for (i = 0; i < data.length; i++) {
-// 				liveTweetsArray.push(data[i].id_str);
-// 			}
-
-// 			for (j = 0; j < liveTweetsArray.length; j++) {
-// 				t.post('statuses/destroy/' + liveTweetsArray[j], {id: liveTweetsArray[j]}, function(err, data, response) {
-// 					if (!err) {
-// 						console.log("Deleted!");
-// 					}
-// 				});
-// 			}
-// 		}
-// 	})
-// }
 
 	// setInterval(function() {
 	//   try {
