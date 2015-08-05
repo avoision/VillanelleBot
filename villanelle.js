@@ -21,8 +21,9 @@ var tumblrClient = tumblr.createClient({
   token_secret: 			process.env.VILLANELLE_TUMBLR_ACCESS_TOKEN_SECRET
 });
 
-
 var wordnikKey = 			process.env.VILLANELLE_WORDNIK_KEY;
+
+wordfilter.addWords(['nigga', 'niggas', 'nigg']);
 
 getRandomWords = function(cb) {
 	console.log("========= Get Random Words =========");	
@@ -279,8 +280,6 @@ getTweetsByWord = function(word, cb) {
 				var currentTweetID = data.statuses[i].id_str,
 					currentUserID = data.statuses[i].user.id_str,
 					currentUserScreenName = data.statuses[i].user.screen_name;
-
-				wordfilter.addWords(['nigga', 'niggas', 'nigg']);
 
 				// Does the current tweet contain offensive words?
 				if (!wordfilter.blacklisted(currentTweet)) {
