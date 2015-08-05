@@ -263,7 +263,7 @@ getAllPublicTweets = function(botData, cb) {
 
 
 getTweetsByWord = function(word, cb) {
-    t.get('search/tweets', {q: word, count: 100, result_type: 'recent', lang: 'en'}, function(err, data, response) {
+    t.get('search/tweets', {q: word, count: 100, result_type: 'recent', lang: 'en', include_entities: false}, function(err, data, response) {
 		if (!err) {
 			
 			var twitterResults = [];
@@ -280,6 +280,7 @@ getTweetsByWord = function(word, cb) {
 					currentUserID = data.statuses[i].user.id_str,
 					currentUserScreenName = data.statuses[i].user.screen_name;
 
+				wordfilter.addWords(['nigga', 'niggas', 'nigg']);
 
 				// Does the current tweet contain offensive words?
 				if (!wordfilter.blacklisted(currentTweet)) {
@@ -469,6 +470,14 @@ formatPoem = function(botData, cb) {
 			theTitle = titleArray[randomPos].tweet;
 		}
 
+		theTitle = theTitle.replace(/\w*/g, function(txt) {
+			return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+			});
+
+		if (theTitle.charAt(theTitle.length - 1) == ".") {
+			theTitle = theTitle.substr(0, theTitle.length - 1);
+		};
+
 		return theTitle;
 	}
 
@@ -521,19 +530,19 @@ formatPoem = function(botData, cb) {
 		+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
 
 		+ "<p class=\"credits\">This <a href=\"https://en.wikipedia.org/wiki/Villanelle\">villanelle</a> was made with tweets by: " 
-			+ "<a href=\"http://twitter.com/" + A1.userID + "\">@" + A1.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + A2.userID + "\">@" + A2.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + a1.userID + "\">@" + a1.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + a2.userID + "\">@" + a2.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + a3.userID + "\">@" + a3.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + a4.userID + "\">@" + a4.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + a5.userID + "\">@" + a5.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + b1.userID + "\">@" + b1.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + b2.userID + "\">@" + b2.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + b3.userID + "\">@" + b3.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + b4.userID + "\">@" + b4.userScreenName + "</a>, "
-			+ "<a href=\"http://twitter.com/" + b5.userID + "\">@" + b5.userScreenName + "</a>, and "
-			+ "<a href=\"http://twitter.com/" + b6.userID + "\">@" + b6.userScreenName + "</a>."
+			+ "<a href=\"" + A1.url + "\">@" + A1.userScreenName + "</a>, "
+			+ "<a href=\"" + A2.url + "\">@" + A2.userScreenName + "</a>, "
+			+ "<a href=\"" + a1.url + "\">@" + a1.userScreenName + "</a>, "
+			+ "<a href=\"" + a2.url + "\">@" + a2.userScreenName + "</a>, "
+			+ "<a href=\"" + a3.url + "\">@" + a3.userScreenName + "</a>, "
+			+ "<a href=\"" + a4.url + "\">@" + a4.userScreenName + "</a>, "
+			+ "<a href=\"" + a5.url + "\">@" + a5.userScreenName + "</a>, "
+			+ "<a href=\"" + b1.url + "\">@" + b1.userScreenName + "</a>, "
+			+ "<a href=\"" + b2.url + "\">@" + b2.userScreenName + "</a>, "
+			+ "<a href=\"" + b3.url + "\">@" + b3.userScreenName + "</a>, "
+			+ "<a href=\"" + b4.url + "\">@" + b4.userScreenName + "</a>, "
+			+ "<a href=\"" + b5.url + "\">@" + b5.userScreenName + "</a>, and "
+			+ "<a href=\"" + b6.url + "\">@" + b6.userScreenName + "</a>."
 			+ "</p>"
 
 		+ "<p class=\"attribution\">Coding: <a href=\"http://twitter.com/avoision\">@avoision</a></p>";
@@ -615,3 +624,5 @@ setInterval(function() {
     console.log(e);
   }
 }, 60000 * 15);
+
+// run();
