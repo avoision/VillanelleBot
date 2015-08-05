@@ -263,7 +263,7 @@ getAllPublicTweets = function(botData, cb) {
 
 
 getTweetsByWord = function(word, cb) {
-    t.get('search/tweets', {q: word, count: 100, result_type: 'recent', lang: 'en', include_entities: false}, function(err, data, response) {
+    t.get('search/tweets', {q: word, count: 100, result_type: 'recent', lang: 'en', include_entities: 'false'}, function(err, data, response) {
 		if (!err) {
 			
 			var twitterResults = [];
@@ -293,6 +293,7 @@ getTweetsByWord = function(word, cb) {
 							if (regex.test(currentTweet)) {
 								// Keep under 50 characters in length;
 								if ((currentTweet.length <= 55) && (currentTweet.length >= 20)) {
+
 									var tweetData = {
 										tweet: data.statuses[i].text,
 										tweetID: currentTweetID,
@@ -302,6 +303,10 @@ getTweetsByWord = function(word, cb) {
 									};
 
 									twitterResults.push(tweetData);
+
+									console.log("Accepted: " + currentTweet);
+								} else {
+									console.log("Rejected: " + currentTweet);
 								}
 							}				
 						}
@@ -317,7 +322,7 @@ getTweetsByWord = function(word, cb) {
 
 			twitterResults = twitterResults.slice(0, 1);
 
-			console.log("+++++++++");
+			// console.log("+++++++++");
 			cb(null, twitterResults);
 		} else {
 			console.log(err);
@@ -616,13 +621,13 @@ run = function() {
 // 	})
 // }
 
-setInterval(function() {
-  try {
-    run();
-  }
-  catch (e) {
-    console.log(e);
-  }
-}, 60000 * 15);
+	// setInterval(function() {
+	//   try {
+	//     run();
+	//   }
+	//   catch (e) {
+	//     console.log(e);
+	//   }
+	// }, 60000 * 15);
 
-// run();
+run();
