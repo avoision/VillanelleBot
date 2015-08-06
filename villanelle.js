@@ -23,7 +23,15 @@ var tumblrClient = tumblr.createClient({
 
 var wordnikKey = 			process.env.VILLANELLE_WORDNIK_KEY;
 
+// Bad words
 wordfilter.addWords(['nigga', 'niggas', 'nigg']);
+
+// Custom characters
+wordfilter.addWords(['@','#', 'http', 'www']);
+
+// Too-Frequent visitors
+// wordfilter.addWords(['']);
+
 
 getRandomWords = function(cb) {
 	console.log("========= Get Random Words =========");	
@@ -271,43 +279,52 @@ getTweetsByWord = function(word, cb) {
 
 			// Loop through all returned statues
 			for (var i = 0; i < data.statuses.length; i++) {
-				var currentTweet = data.statuses[i].text.toLowerCase(),
-					hasReply = currentTweet.indexOf('@'), 
-					hasHashtag = currentTweet.indexOf('#')
-					hasLink = currentTweet.indexOf('http');
-					hasAmp = currentTweet.indexOf('&');
+				var currentTweet = data.statuses[i].text.toLowerCase();
 
 				var currentTweetID = data.statuses[i].id_str,
 					currentUserID = data.statuses[i].user.id_str,
 					currentUserScreenName = data.statuses[i].user.screen_name;
 
-				// Does the current tweet contain offensive words?
-				if (!wordfilter.blacklisted(currentTweet)) {
-					// Does the tweet contain an emoji?
-					if (emojiRegex().test(currentTweet) == false) {
-						// Does the current tweet have a reply, hashtag, or URL?
-						if ((hasReply == -1) && (hasHashtag == -1) && (hasLink == -1) && (hasAmp == -1)) {
+				// Does the current tweet contain a number?
+				if (/[0-9]+/.test(currentTweet) == false) {
+					// Does the current tweet contain offensive words?
+					if (!wordfilter.blacklisted(currentTweet)) {
+						// Does the tweet contain an emoji?
+						if (emojiRegex().test(currentTweet) == false) {
 							// Checking if word is at the end of a sentence.
 							var regex = new RegExp(word + "[ ,?!.]+$");
 							if (regex.test(currentTweet)) {
-								// Keep under 50 characters in length;
-								if ((currentTweet.length <= 55) && (currentTweet.length >= 20)) {
-
-									var tweetData = {
-										tweet: data.statuses[i].text,
-										tweetID: currentTweetID,
-										userID: currentUserID,
-										userScreenName: currentUserScreenName,
-										url: "http://twitter.com/" + currentUserScreenName + "/status/" + currentTweetID
-									};
-									twitterResults.push(tweetData);
-									console.log("+");
+								// Do we have ellipses or ?! or other excessive punctuation? Reject.
+								if (/[,?!.]{2}$/.test(currentTweet) == false) {							
+									// Keep under 50 characters in length;
+									if ((currentTweet.length <= 55) && (currentTweet.length >= 20)) {
+										var tweetData = {
+											tweet: data.statuses[i].text,
+											tweetID: currentTweetID,
+											userID: currentUserID,
+											userScreenName: currentUserScreenName,
+											url: "http://twitter.com/" + currentUserScreenName + "/status/" + currentTweetID
+										};
+										twitterResults.push(tweetData);
+										console.log("+");
+									} else {
+										// console.log('- Length');
+									}
 								} else {
-									console.log("Rejected: " + currentTweet);
+									// console.log('- ...$');
 								}
-							}				
+							} else {
+								// console.log('- Not Ending');
+							}
+
+						} else {
+							// console.log('- Emjoji');
 						}
+					} else {
+						// console.log('- Blacklist');
 					}
+				} else {
+					// console.log('- Number');
 				}
 			}
 
@@ -448,8 +465,6 @@ checkRequirements = function(botData, cb) {
 }
 
 formatPoem = function(botData, cb) {
-	console.log('---------------------------');
-
 	// console.log("A Phrases: " + JSON.stringify(botData.aPhrases));
 	// console.log("B Phrases: " + JSON.stringify(botData.bPhrases));
 
@@ -472,12 +487,12 @@ formatPoem = function(botData, cb) {
 			theTitle = titleArray[randomPos].tweet;
 		}
 
-		theTitle = theTitle.replace(/\w*/g, function(txt) {
+		theTitle = theTitle.replace(/\w\S*/g, function(txt) {
 			return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
 			});
 
-		if (theTitle.charAt(theTitle.length - 1) == ".") {
-			theTitle = theTitle.substr(0, theTitle.length - 1);
+		while ((theTitle.charAt(theTitle.length-1) == ".") || (theTitle.charAt(theTitle.length-1) == ",")) {
+		    theTitle = theTitle.substring(0, theTitle.length-1);
 		};
 
 		return theTitle;
@@ -562,12 +577,43 @@ publishPoem = function(poemTitle, villanelle, cb) {
 
 	tumblrClient.text(blogName, options, function(err, success) {
 		if (!err) {
-			console.log("Success: " + success);			
+			console.log("Success: " + JSON.stringify(success));
 		} else {
 			console.log("Errors: " + err);
 		}
 	});
+
+	cb(null);
 }
+
+rateLimitCheck = function() {
+	console.log('---------------------------');
+    t.get('application/rate_limit_status', {resources: 'search'}, function (err, data, response) {
+		if (!err) {
+			var dataRoot = data.resources.search['/search/tweets'],
+				limit = dataRoot.limit,
+				remaining = dataRoot.remaining,
+				resetTime = dataRoot.reset + "000",
+				currentTime = (new Date).getTime().toString(),
+				msRemaining = resetTime - currentTime,
+				totalSecsRemaining = Math.floor(msRemaining / 1000),
+				minRemaining = Math.floor(totalSecsRemaining/60),
+				secRemaining = totalSecsRemaining%60;
+
+			if (minRemaining < 10) {
+				minRemaining = "0" + minRemaining;
+			}
+
+			if (secRemaining < 10) {
+				secRemaining = "0" + secRemaining;
+			}
+			console.log("Rate limit: " + remaining + "/" + limit);
+			console.log("Next reset: " + minRemaining + ":" + secRemaining);
+		}
+	});
+}
+
+
 
 
 
@@ -586,11 +632,13 @@ run = function() {
 		gatherAndCleanPhrases,
 		checkRequirements,
 		formatPoem,
-		publishPoem
+		publishPoem,
+		rateLimitCheck
     ],
     function(err, botData) {
 		if (err) {
 			console.log('Error: ', err);
+			rateLimitCheck();
 		}
     });
 }

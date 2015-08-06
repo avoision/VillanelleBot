@@ -1,5 +1,6 @@
 node_modules
 _assets
 _reference
+_src
 .env
 .netrc
