@@ -29,9 +29,8 @@ wordfilter.addWords(['nigga', 'niggas', 'nigg']);
 // Custom characters
 wordfilter.addWords(['@','#', 'http', 'www']);
 
-// Too-Frequent visitors
-// wordfilter.addWords(['']);
-
+// Lyrics and annoyingly frequent
+var annoyingRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade'];
 
 getRandomWords = function(cb) {
 	console.log("========= Get Random Words =========");	
@@ -186,15 +185,37 @@ createRhymeLists = function(botData, cb) {
 		rhymingWordsArray[i].push(botData.allWords[i]);
 	}
 
+
+var testThings = function() {
+    for (var i = 0; i < annoyingRepeaters.length; i++) {
+        var regex = new RegExp(annoyingRepeaters[i]);
+        var bob = regex.test(title);
+        console.log(bob);
+    }
+}
+
+
 	for (var j = 0; j < botData.rhymingWordsData.length; j++) {
 		var currentArrayPos = botData.rhymingWordsData[j];
 		if (currentArrayPos != null) {
 			// Cycle through rhyming words. 
 			for (var k = 0; k < currentArrayPos[0].words.length; k++) {
+				var isAnnoying = false;
 				var currentWord = currentArrayPos[0].words[k];
+
+// for (var m = 0; m < annoyingRepeaters.length; m++) {
+// 	if (currentWord == annoyingRepeaters[i]) {
+//		isAnnoying = true;
+//		break;
+//	}
+// }
+
+
 				// Ensure first letter is not capitalized.
 				// Also: remove based on length? Anything greater than 11 characters?
 				if (currentWord.charAt(0) !== currentWord.charAt(0).toUpperCase()
+					&& 
+					annoyingRepeaters
 					&& (currentWord.length >= minWordLength)
 					&& (currentWord.length <= maxWordLength)) {
 					rhymingWordsArray[j].push(currentArrayPos[0].words[k]);
@@ -295,7 +316,7 @@ getTweetsByWord = function(word, cb) {
 							var regex = new RegExp(word + "[ ,?!.]+$");
 							if (regex.test(currentTweet)) {
 								// Do we have ellipses or ?! or other excessive punctuation? Reject.
-								if (/[,?!.]{2}$/.test(currentTweet) == false) {							
+								if (/[,?!.]{2}/.test(currentTweet) == false) {				
 									// Keep under 50 characters in length;
 									if ((currentTweet.length <= 55) && (currentTweet.length >= 20)) {
 										var tweetData = {
