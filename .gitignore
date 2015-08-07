@@ -4,3 +4,5 @@ _reference
 _src
 .env
 .netrc
+response.js
+psuedocode.js

@@ -13,7 +13,6 @@ var t = new Twit({
     app_only_auth: 			true
 });
 
-
 var tumblrClient = tumblr.createClient({
   consumer_key: 			process.env.VILLANELLE_TUMBLR_CONSUMER_KEY,
   consumer_secret: 			process.env.VILLANELLE_TUMBLR_CONSUMER_SECRET,
@@ -29,8 +28,25 @@ wordfilter.addWords(['nigga', 'niggas', 'nigg']);
 // Custom characters
 wordfilter.addWords(['@','#', 'http', 'www']);
 
-// Lyrics and annoyingly frequent
-var annoyingRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade'];
+// Junk shorthand from lazy typers
+wordfilter.addWords([' ur ', ' u ']);
+
+// Lyrics and annoyingly frequent rhyme words to ignore
+var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade']; 
+
+// Tracking the rejects
+var statsTracker = {
+	total: 0,
+	accepted: 0,
+	rejectTracker: {
+		length: 0,
+		punctuation: 0,
+		notEndWord: 0,
+		emoji: 0,
+		blacklist: 0,
+		hasNumber: 0
+	}
+};
 
 getRandomWords = function(cb) {
 	console.log("========= Get Random Words =========");	
@@ -109,6 +125,30 @@ cleanRandomWords = function(botData, result, cb) {
 			botData.allWords.push(result[i].word);
 		};
 	};
+
+	botData.allWords = _.shuffle(botData.allWords);
+
+	console.log("botData.allWords First: " + JSON.stringify(botData.allWords));
+	
+	// Reduce number of similarly rhyming words from the set. Compare array elements to one another
+	// and toss out matches based on last three characters. 
+	for (var a = 0; a < botData.allWords.length-1; a++) { // No need to select last item to compare.
+	    firstTrio = botData.allWords[a].substr(botData.allWords[a].length - 3);
+	    
+	    if (firstTrio == "ing") { continue; }; // Allow any -ing words to remain.
+	    
+	    for (var b = botData.allWords.length - 1; b >= a+1; b--) { // No need to check word against itself.
+	        checkTrio = botData.allWords[b].substr(botData.allWords[b].length - 3);
+	        if (firstTrio == checkTrio) {
+	            // Matching words, high chance for rhyme overlap. Remove.
+	            console.log("Discarded: " + botData.allWords[a] + " / " + botData.allWords[b]);
+	            botData.allWords.splice(b, 1);
+	        }
+	    }
+	}
+
+	console.log("botData.allWords After: " + JSON.stringify(botData.allWords));	
+
 	cb(null, botData);
 };
 
@@ -179,43 +219,37 @@ createRhymeLists = function(botData, cb) {
 		maxWordLength = 7,
 		maxArrays = 16,
 		desiredNumberOfRhymes = 20;
-	
+
+
+
+
+
+
 	for (var i = 0; i < botData.allWords.length; i++) {
 		rhymingWordsArray[i] = [];
 		rhymingWordsArray[i].push(botData.allWords[i]);
 	}
-
-
-var testThings = function() {
-    for (var i = 0; i < annoyingRepeaters.length; i++) {
-        var regex = new RegExp(annoyingRepeaters[i]);
-        var bob = regex.test(title);
-        console.log(bob);
-    }
-}
-
 
 	for (var j = 0; j < botData.rhymingWordsData.length; j++) {
 		var currentArrayPos = botData.rhymingWordsData[j];
 		if (currentArrayPos != null) {
 			// Cycle through rhyming words. 
 			for (var k = 0; k < currentArrayPos[0].words.length; k++) {
-				var isAnnoying = false;
+				var isAnnoyingRhymeRepeater = false;
 				var currentWord = currentArrayPos[0].words[k];
 
-// for (var m = 0; m < annoyingRepeaters.length; m++) {
-// 	if (currentWord == annoyingRepeaters[i]) {
-//		isAnnoying = true;
-//		break;
-//	}
-// }
-
+				for (var m = 0; m < annoyingRhymeRepeaters.length; m++) {
+					if (currentWord == annoyingRhymeRepeaters[m]) {
+						isAnnoyingRhymeRepeater = true;
+						console.log("Eww: " + currentWord);
+						break;
+					}
+				}
 
 				// Ensure first letter is not capitalized.
 				// Also: remove based on length? Anything greater than 11 characters?
 				if (currentWord.charAt(0) !== currentWord.charAt(0).toUpperCase()
-					&& 
-					annoyingRepeaters
+					&& (isAnnoyingRhymeRepeater == false)
 					&& (currentWord.length >= minWordLength)
 					&& (currentWord.length <= maxWordLength)) {
 					rhymingWordsArray[j].push(currentArrayPos[0].words[k]);
@@ -236,7 +270,7 @@ var testThings = function() {
 			// Keep track of the first word
 			var firstWord = rhymingWordsArray[0];
 
-			_.shuffle(rhymingWordsArray[x]);
+			rhymingWordsArray[x] = _.shuffle(rhymingWordsArray[x]);
 			rhymingWordsArray.unshift(firstWord);
 			rhymingWordsArray[x] = rhymingWordsArray[x].slice(0, desiredNumberOfRhymes);
 		}
@@ -247,7 +281,7 @@ var testThings = function() {
 maxArrays = 5;	// TESTING ONLY - REMOVE THIS!
 
 	if (rhymingWordsArray.length > maxArrays) {
-		_.shuffle(rhymingWordsArray);
+		rhymingWordsArray = _.shuffle(rhymingWordsArray);
 		rhymingWordsArray = rhymingWordsArray.slice(0, maxArrays);
 	}
 
@@ -266,9 +300,9 @@ getAllPublicTweets = function(botData, cb) {
 	    	if (err) {
 	    		cb("Problem getting Tweets. Sequence failed.");
 	    	} else {
-	    		console.log("   " + (botData.counter + 1) + " set of Twitter posts found.");
-
-	    		if (results != null) {
+	    		console.log("End Round " + (botData.counter + 1));
+				console.log(' --------------------------- ');
+	    		if (results != null) {   			
 					botData.rhymeSchemeArray.push(results);
 	    		}
 
@@ -277,10 +311,6 @@ getAllPublicTweets = function(botData, cb) {
 	    		if (botData.counter == botData.rhymingWordsArray.length) {
 	    			cb(null, botData);
 	    		} else {
-
-// console.log("Results: " + JSON.stringify(results));
-// console.log(">>>");
-
 	    			getAllTweetsSequence(botData.counter);
 	    		}		
 	    	}	
@@ -300,6 +330,7 @@ getTweetsByWord = function(word, cb) {
 
 			// Loop through all returned statues
 			for (var i = 0; i < data.statuses.length; i++) {
+				statsTracker.total++;
 				var currentTweet = data.statuses[i].text.toLowerCase();
 
 				var currentTweetID = data.statuses[i].id_str,
@@ -307,7 +338,7 @@ getTweetsByWord = function(word, cb) {
 					currentUserScreenName = data.statuses[i].user.screen_name;
 
 				// Does the current tweet contain a number?
-				if (/[0-9]+/.test(currentTweet) == false) {
+				// if (/[0-9]+/.test(currentTweet) == false) {
 					// Does the current tweet contain offensive words?
 					if (!wordfilter.blacklisted(currentTweet)) {
 						// Does the tweet contain an emoji?
@@ -319,6 +350,7 @@ getTweetsByWord = function(word, cb) {
 								if (/[,?!.]{2}/.test(currentTweet) == false) {				
 									// Keep under 50 characters in length;
 									if ((currentTweet.length <= 55) && (currentTweet.length >= 20)) {
+										statsTracker.accepted++;
 										var tweetData = {
 											tweet: data.statuses[i].text,
 											tweetID: currentTweetID,
@@ -327,32 +359,38 @@ getTweetsByWord = function(word, cb) {
 											url: "http://twitter.com/" + currentUserScreenName + "/status/" + currentTweetID
 										};
 										twitterResults.push(tweetData);
-										console.log("+");
+										console.log("+ " + word + ": " + tweetData.tweet);
 									} else {
 										// console.log('- Length');
+										statsTracker.rejectTracker.length++;
 									}
 								} else {
-									// console.log('- ...$');
+									// console.log('- ?!...');
+									statsTracker.rejectTracker.punctuation++;
 								}
 							} else {
 								// console.log('- Not Ending');
+								statsTracker.rejectTracker.notEndWord++;
 							}
 
 						} else {
 							// console.log('- Emjoji');
+							statsTracker.rejectTracker.emoji++;
 						}
 					} else {
 						// console.log('- Blacklist');
+						statsTracker.rejectTracker.blacklist++;
 					}
-				} else {
-					// console.log('- Number');
-				}
+				// } else {
+				// 	// console.log('- Number');
+				// 	statsTracker.rejectTracker.hasNumber++;
+				// }
 			}
 
 			// Do we have more than one example with this word? 
 			// If so, randomize and reduce to one.
 			if (twitterResults.length > 1) {
-				_.shuffle(twitterResults);
+				twitterResults = _.shuffle(twitterResults);
 			}
 
 			twitterResults = twitterResults.slice(0, 1);
@@ -420,7 +458,7 @@ checkRequirements = function(botData, cb) {
 		for (var i = 0; i < rhymeSets.length; i++) {
 			if (rhymeSets[i].length >= 7) {
 				botData.aPhrases = rhymeSets[i];
-				_.shuffle(botData.aPhrases);
+				botData.aPhrases = _.shuffle(botData.aPhrases);
 				botData.aPhrases = botData.aPhrases.slice(0, 7);
 
 				for (var a = 0; a <botData.aPhrases.length; a++) {
@@ -463,8 +501,7 @@ checkRequirements = function(botData, cb) {
 					}
 
 					if (botData.bPhrases.length >= 6) {					
-
-						_.shuffle(botData.bPhrases);
+						botData.bPhrases = _.shuffle(botData.bPhrases);
 						botData.bPhrases = botData.bPhrases.slice(0, 6);
 						botData.bPhrasesQuotaMet = true;
 						break;
@@ -494,7 +531,7 @@ formatPoem = function(botData, cb) {
 			titleArray = _.union(botData.aPhrases, botData.bPhrases);
 		
 		titleArray.splice(0, 2);
-		_.shuffle(titleArray);
+		titleArray = _.shuffle(titleArray);
 
 		for (var x = 0; x < titleArray; x++) {
 			if (titleArray[x].tweet.length <= 33) {
@@ -513,7 +550,7 @@ formatPoem = function(botData, cb) {
 			});
 
 		while ((theTitle.charAt(theTitle.length-1) == ".") || (theTitle.charAt(theTitle.length-1) == ",")) {
-		    theTitle = theTitle.substring(0, theTitle.length-1);
+		    theTitle = theTitle.substr(0, theTitle.length-1);
 		};
 
 		return theTitle;
@@ -607,7 +644,7 @@ publishPoem = function(poemTitle, villanelle, cb) {
 	cb(null);
 }
 
-rateLimitCheck = function() {
+rateLimitCheck = function(cb) {
 	console.log('---------------------------');
     t.get('application/rate_limit_status', {resources: 'search'}, function (err, data, response) {
 		if (!err) {
@@ -630,12 +667,12 @@ rateLimitCheck = function() {
 			}
 			console.log("Rate limit: " + remaining + "/" + limit);
 			console.log("Next reset: " + minRemaining + ":" + secRemaining);
+
+			console.log('---------------------------');
+			console.log(JSON.stringify(statsTracker));
 		}
 	});
 }
-
-
-
 
 
 // ===========================
