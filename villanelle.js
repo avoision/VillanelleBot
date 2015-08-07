@@ -39,12 +39,13 @@ var statsTracker = {
 	total: 0,
 	accepted: 0,
 	rejectTracker: {
-		length: 0,
-		punctuation: 0,
-		notEndWord: 0,
-		emoji: 0,
 		blacklist: 0,
-		hasNumber: 0
+		emoji: 0,
+		hasNumber: 0,
+		length: 0,
+		notEndWord: 0,
+		punctuation: 0,
+		upper: 0
 	}
 };
 
@@ -127,8 +128,6 @@ cleanRandomWords = function(botData, result, cb) {
 	};
 
 	botData.allWords = _.shuffle(botData.allWords);
-
-	console.log("botData.allWords First: " + JSON.stringify(botData.allWords));
 	
 	// Reduce number of similarly rhyming words from the set. Compare array elements to one another
 	// and toss out matches based on last three characters. 
@@ -146,8 +145,6 @@ cleanRandomWords = function(botData, result, cb) {
 	        }
 	    }
 	}
-
-	console.log("botData.allWords After: " + JSON.stringify(botData.allWords));	
 
 	cb(null, botData);
 };
@@ -220,11 +217,6 @@ createRhymeLists = function(botData, cb) {
 		maxArrays = 16,
 		desiredNumberOfRhymes = 20;
 
-
-
-
-
-
 	for (var i = 0; i < botData.allWords.length; i++) {
 		rhymingWordsArray[i] = [];
 		rhymingWordsArray[i].push(botData.allWords[i]);
@@ -278,7 +270,7 @@ createRhymeLists = function(botData, cb) {
 
 	// Avoid hitting rate limit in a single call. Must be lower than 450 (22 arrays with 20 items each)
 	
-maxArrays = 5;	// TESTING ONLY - REMOVE THIS!
+maxArrays = 10;	// TESTING ONLY - REMOVE THIS!
 
 	if (rhymingWordsArray.length > maxArrays) {
 		rhymingWordsArray = _.shuffle(rhymingWordsArray);
@@ -300,8 +292,7 @@ getAllPublicTweets = function(botData, cb) {
 	    	if (err) {
 	    		cb("Problem getting Tweets. Sequence failed.");
 	    	} else {
-	    		console.log("End Round " + (botData.counter + 1));
-				console.log(' --------------------------- ');
+	    		console.log('--------- End Round ' + (botData.counter + 1) + '---------');
 	    		if (results != null) {   			
 					botData.rhymeSchemeArray.push(results);
 	    		}
@@ -331,6 +322,15 @@ getTweetsByWord = function(word, cb) {
 			// Loop through all returned statues
 			for (var i = 0; i < data.statuses.length; i++) {
 				statsTracker.total++;
+
+				var tweetAsIs = data.statuses[i].text;
+
+				// Remove tweets with excessive uppercase
+				if (/[A-Z]{2}/.test(tweetAsIs)) {
+					statsTracker.rejectTracker.upper++;
+					continue;  
+				};
+
 				var currentTweet = data.statuses[i].text.toLowerCase();
 
 				var currentTweetID = data.statuses[i].id_str,
@@ -338,7 +338,7 @@ getTweetsByWord = function(word, cb) {
 					currentUserScreenName = data.statuses[i].user.screen_name;
 
 				// Does the current tweet contain a number?
-				// if (/[0-9]+/.test(currentTweet) == false) {
+				if (/[0-9]+/.test(currentTweet) == false) {
 					// Does the current tweet contain offensive words?
 					if (!wordfilter.blacklisted(currentTweet)) {
 						// Does the tweet contain an emoji?
@@ -381,10 +381,10 @@ getTweetsByWord = function(word, cb) {
 						// console.log('- Blacklist');
 						statsTracker.rejectTracker.blacklist++;
 					}
-				// } else {
-				// 	// console.log('- Number');
-				// 	statsTracker.rejectTracker.hasNumber++;
-				// }
+				} else {
+					// console.log('- Number');
+					statsTracker.rejectTracker.hasNumber++;
+				}
 			}
 
 			// Do we have more than one example with this word? 
