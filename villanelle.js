@@ -53,6 +53,8 @@ getRandomWords = function(cb) {
 	console.log("========= Get Random Words =========");	
 	var botData = {
 		counter: 0,
+		wordCounter: 0,
+		maxWordCounter: 60,
 		allWords: [],
 		rhymingWordsData: [],
 		rhymingWordsArray: [],
@@ -67,14 +69,17 @@ getRandomWords = function(cb) {
     var client = new Client();
     var partsOfSpeech = ["noun", "adjective", "verb"],
     	randomPos = Math.floor(Math.random() * partsOfSpeech.length),
-    	randomPartOfSpeech = partsOfSpeech[randomPos];
+    	// randomPartOfSpeech = partsOfSpeech[randomPos];
+    	randomPartOfSpeech = partsOfSpeech[0];
+
 
     var wordnikRandomOptions = {
     	hasDictionaryDef: "true",
 		includePartOfSpeech: randomPartOfSpeech,
-		minCorpusCount: "10000",
+		// minCorpusCount: "10000",
+		minCorpusCount: "30000",
 		maxCorpusCount: "-1",
-		minDictionaryCount: "5",
+		minDictionaryCount: "3",
 		maxDictionaryCount: "-1",
 		minLength: "3",
 		maxLength: "7",
@@ -84,7 +89,7 @@ getRandomWords = function(cb) {
 
     // If verb, require fewer definitions
     if (randomPartOfSpeech == "verb") {
-    	wordnikRandomOptions.minDictionaryCount = 2;
+    	wordnikRandomOptions.minDictionaryCount = 4;
     };
 
     var wordnikGetRandomWordsURL = 
@@ -134,7 +139,9 @@ cleanRandomWords = function(botData, result, cb) {
 	for (var a = 0; a < botData.allWords.length-1; a++) { // No need to select last item to compare.
 	    firstTrio = botData.allWords[a].substr(botData.allWords[a].length - 3);
 	    
-	    if (firstTrio == "ing") { continue; }; // Allow any -ing words to remain.
+	    if (firstTrio == "ing") 
+
+	    { continue; }; // Allow words with these endings to remain (-ing, -nds, etc).
 	    
 	    for (var b = botData.allWords.length - 1; b >= a+1; b--) { // No need to check word against itself.
 	        checkTrio = botData.allWords[b].substr(botData.allWords[b].length - 3);
@@ -145,7 +152,6 @@ cleanRandomWords = function(botData, result, cb) {
 	        }
 	    }
 	}
-
 	cb(null, botData);
 };
 
@@ -210,22 +216,34 @@ findRhymes = function(word, cb) {
 
 createRhymeLists = function(botData, cb) {
 	console.log("========= Create Rhyme Lists =========");	
+	
+	// console.log('---------------------------');
+	// console.log("botData.allWords");
+	// console.log('---------------------------');
+	// console.log(JSON.stringify(botData.allWords));
 
 	var rhymingWordsArray = [],
-		minWordLength = 3,
+		minWordLength = 4,
 		maxWordLength = 7,
 		maxArrays = 16,
-		desiredNumberOfRhymes = 20;
+		minDesiredNumberOfRhymes = 5,
+		maxDesiredNumberOfRhymes = 20;
 
 	for (var i = 0; i < botData.allWords.length; i++) {
 		rhymingWordsArray[i] = [];
 		rhymingWordsArray[i].push(botData.allWords[i]);
 	}
 
+	// console.log('===========================');
+	// console.log('rhymingWordsArray');
+	// console.log('===========================');
+	// console.log(JSON.stringify(rhymingWordsArray));
+
 	for (var j = 0; j < botData.rhymingWordsData.length; j++) {
 		var currentArrayPos = botData.rhymingWordsData[j];
 		if (currentArrayPos != null) {
 			// Cycle through rhyming words. 
+
 			for (var k = 0; k < currentArrayPos[0].words.length; k++) {
 				var isAnnoyingRhymeRepeater = false;
 				var currentWord = currentArrayPos[0].words[k];
@@ -250,31 +268,44 @@ createRhymeLists = function(botData, cb) {
 		}
 	}
 
+	// console.log('===========================');
+	// console.log('Before: rhymingWordsArray');
+	// console.log('===========================');
+	// console.log(JSON.stringify(rhymingWordsArray));
+	
 	// Cycle through array, remove anything with less than desired number of rhymes.
 	for (var x = rhymingWordsArray.length - 1; x >= 0; x--) {
-		if (rhymingWordsArray[x].length < desiredNumberOfRhymes) {
+
+		if (rhymingWordsArray[x].length < minDesiredNumberOfRhymes) {
 			rhymingWordsArray.splice(x, 1);
 			continue;
 		};
 
 		// If more than desired number of rhymes, randomize and trim
-		if (rhymingWordsArray[x].length > desiredNumberOfRhymes) {
+		if (rhymingWordsArray[x].length > maxDesiredNumberOfRhymes) {
 			// Keep track of the first word
-			var firstWord = rhymingWordsArray[0];
-
+			var firstWord = rhymingWordsArray[x][0];
 			rhymingWordsArray[x] = _.shuffle(rhymingWordsArray[x]);
-			rhymingWordsArray.unshift(firstWord);
-			rhymingWordsArray[x] = rhymingWordsArray[x].slice(0, desiredNumberOfRhymes);
+			rhymingWordsArray[x].unshift(firstWord);
+			rhymingWordsArray[x] = rhymingWordsArray[x].slice(0, maxDesiredNumberOfRhymes);
 		}
 	}
 
+	// console.log('===========================');
+	// console.log('After: rhymingWordsArray');
+	// console.log('===========================');
+	// console.log(JSON.stringify(rhymingWordsArray));
+
+
 	// Avoid hitting rate limit in a single call. Must be lower than 450 (22 arrays with 20 items each)
-	
-maxArrays = 10;	// TESTING ONLY - REMOVE THIS!
+maxArrays = 5;	// TESTING ONLY - REMOVE THIS!
 
 	if (rhymingWordsArray.length > maxArrays) {
 		rhymingWordsArray = _.shuffle(rhymingWordsArray);
 		rhymingWordsArray = rhymingWordsArray.slice(0, maxArrays);
+	} else {
+		console.log("Total sets: " + rhymingWordsArray.length);
+		cb("Not enough rhyming words.")
 	}
 
 	botData.rhymingWordsArray = rhymingWordsArray;
