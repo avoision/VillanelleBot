@@ -77,9 +77,9 @@ getRandomWords = function(cb) {
     	hasDictionaryDef: "true",
 		includePartOfSpeech: randomPartOfSpeech,
 		// minCorpusCount: "10000",
-		minCorpusCount: "30000",
+		minCorpusCount: "20000",
 		maxCorpusCount: "-1",
-		minDictionaryCount: "3",
+		minDictionaryCount: "10",
 		maxDictionaryCount: "-1",
 		minLength: "3",
 		maxLength: "7",
@@ -136,22 +136,24 @@ cleanRandomWords = function(botData, result, cb) {
 	
 	// Reduce number of similarly rhyming words from the set. Compare array elements to one another
 	// and toss out matches based on last three characters. 
-	for (var a = 0; a < botData.allWords.length-1; a++) { // No need to select last item to compare.
-	    firstTrio = botData.allWords[a].substr(botData.allWords[a].length - 3);
-	    
-	    if (firstTrio == "ing") 
 
-	    { continue; }; // Allow words with these endings to remain (-ing, -nds, etc).
+	// for (var a = 0; a < botData.allWords.length-1; a++) { // No need to select last item to compare.
+	//     firstTrio = botData.allWords[a].substr(botData.allWords[a].length - 3);
 	    
-	    for (var b = botData.allWords.length - 1; b >= a+1; b--) { // No need to check word against itself.
-	        checkTrio = botData.allWords[b].substr(botData.allWords[b].length - 3);
-	        if (firstTrio == checkTrio) {
-	            // Matching words, high chance for rhyme overlap. Remove.
-	            console.log("Discarded: " + botData.allWords[a] + " / " + botData.allWords[b]);
-	            botData.allWords.splice(b, 1);
-	        }
-	    }
-	}
+	//     if (firstTrio == "ing") 
+
+	//     { continue; }; // Allow words with these endings to remain (-ing, -nds, etc).
+	    
+	//     for (var b = botData.allWords.length - 1; b >= a+1; b--) { // No need to check word against itself.
+	//         checkTrio = botData.allWords[b].substr(botData.allWords[b].length - 3);
+	//         if (firstTrio == checkTrio) {
+	//             // Matching words, high chance for rhyme overlap. Remove.
+	//             console.log("Discarded: " + botData.allWords[a] + " / " + botData.allWords[b]);
+	//             botData.allWords.splice(b, 1);
+	//         }
+	//     }
+	// }
+
 	cb(null, botData);
 };
 
@@ -223,10 +225,10 @@ createRhymeLists = function(botData, cb) {
 	// console.log(JSON.stringify(botData.allWords));
 
 	var rhymingWordsArray = [],
-		minWordLength = 4,
-		maxWordLength = 7,
+		minWordLength = 3,
+		maxWordLength = 5,
 		maxArrays = 16,
-		minDesiredNumberOfRhymes = 5,
+		minDesiredNumberOfRhymes = 15,
 		maxDesiredNumberOfRhymes = 20;
 
 	for (var i = 0; i < botData.allWords.length; i++) {
@@ -276,7 +278,7 @@ createRhymeLists = function(botData, cb) {
 	// Cycle through array, remove anything with less than desired number of rhymes.
 	for (var x = rhymingWordsArray.length - 1; x >= 0; x--) {
 
-		if (rhymingWordsArray[x].length < minDesiredNumberOfRhymes) {
+		if (rhymingWordsArray[x].length < maxDesiredNumberOfRhymes) {
 			rhymingWordsArray.splice(x, 1);
 			continue;
 		};
@@ -305,7 +307,7 @@ maxArrays = 5;	// TESTING ONLY - REMOVE THIS!
 		rhymingWordsArray = rhymingWordsArray.slice(0, maxArrays);
 	} else {
 		console.log("Total sets: " + rhymingWordsArray.length);
-		cb("Not enough rhyming words.")
+		cb("Not enough rhyming words.");
 	}
 
 	botData.rhymingWordsArray = rhymingWordsArray;
@@ -380,7 +382,7 @@ getTweetsByWord = function(word, cb) {
 								// Do we have ellipses or ?! or other excessive punctuation? Reject.
 								if (/[,?!.]{2}/.test(currentTweet) == false) {				
 									// Keep under 50 characters in length;
-									if ((currentTweet.length <= 55) && (currentTweet.length >= 20)) {
+									if ((currentTweet.length <= 60) && (currentTweet.length >= 10)) {
 										statsTracker.accepted++;
 										var tweetData = {
 											tweet: data.statuses[i].text,
