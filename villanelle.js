@@ -33,6 +33,7 @@ wordfilter.addWords([' ur ', ' u ']);
 
 // Lyrics and annoyingly frequent rhyme words to ignore
 var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade']; 
+// Possible additions: rase, dase
 
 // Tracking the rejects
 var statsTracker = {
@@ -228,18 +229,18 @@ createRhymeLists = function(botData, cb) {
 		maxWordLength = 6,
 		maxArrays = 16,
 		minArrays = 2,
-		minDesiredNumberOfRhymes = 20,
-		maxDesiredNumberOfRhymes = 30;
+		minDesiredNumberOfRhymes = 30,
+		maxDesiredNumberOfRhymes = 40;
 
 	for (var i = 0; i < botData.allWords.length; i++) {
 		rhymingWordsArray[i] = [];
 		rhymingWordsArray[i].push(botData.allWords[i]);
 	}
 
-	console.log('===========================');
-	console.log('rhymingWordsArray');
-	console.log('===========================');
-	console.log(JSON.stringify(rhymingWordsArray));
+// console.log('===========================');
+// console.log('rhymingWordsArray');
+// console.log('===========================');
+// console.log(JSON.stringify(rhymingWordsArray));
 
 	for (var j = 0; j < botData.rhymingWordsData.length; j++) {
 		var currentArrayPos = botData.rhymingWordsData[j];
@@ -270,10 +271,10 @@ createRhymeLists = function(botData, cb) {
 		}
 	}
 
-	console.log('===========================');
-	console.log('Before Cleanup: rhymingWordsArray');
-	console.log('===========================');
-	console.log(JSON.stringify(rhymingWordsArray));
+// console.log('===========================');
+// console.log('Before Cleanup: rhymingWordsArray');
+// console.log('===========================');
+// console.log(JSON.stringify(rhymingWordsArray));
 	
 	// Cycle through array, remove anything with less than desired number of rhymes.
 	for (var x = rhymingWordsArray.length - 1; x >= 0; x--) {
@@ -293,10 +294,10 @@ createRhymeLists = function(botData, cb) {
 		}
 	}
 
-	console.log('===========================');
-	console.log('AfterCleanup: rhymingWordsArray');
-	console.log('===========================');
-	console.log(JSON.stringify(rhymingWordsArray));
+// console.log('===========================');
+// console.log('AfterCleanup: rhymingWordsArray');
+// console.log('===========================');
+// console.log(JSON.stringify(rhymingWordsArray));
 
 
 	// Avoid hitting rate limit in a single call. Must be lower than 450 (22 arrays with 20 items each)
@@ -350,13 +351,15 @@ getAllPublicTweets = function(botData, cb) {
 
 getTweetsByWord = function(word, cb) {
 	// word = word + "%20-RT%20-%40%20-http";
-	// word = word + "%20-RT";
+	var suffix = "%20-RT%20-%40%20-http";
 
 	console.log(word);
-    t.get('search/tweets', {q: word, count: 100, result_type: 'recent', lang: 'en', include_entities: 'false'}, function(err, data, response) {
+    t.get('search/tweets', {q: word + suffix, count: 100, result_type: 'recent', lang: 'en', include_entities: 'false'}, function(err, data, response) {
 		if (!err) {
 			
 			var twitterResults = [];
+
+var twoLetterWords = ['am','an','as','at','ax','be','by','go','he','hi','id','if','in','is','it','ma','me','my','no','oh','on','or','ow','ox','pa','pi','sh','so','to','up','us','we'];
 
 			// Loop through all returned statues
 			for (var i = 0; i < data.statuses.length; i++) {
@@ -366,10 +369,10 @@ getTweetsByWord = function(word, cb) {
 				// console.log(tweetAsIs);
 
 				// Remove tweets with excessive uppercase
-				// if (/[A-Z]{2}/.test(tweetAsIs)) {
-				// 	statsTracker.rejectTracker.upper++;
-				// 	continue;  
-				// };
+				if (/[A-Z]{2}/.test(tweetAsIs)) {
+					statsTracker.rejectTracker.upper++;
+					continue;  
+				};
 
 				var currentTweet = data.statuses[i].text.toLowerCase();
 
