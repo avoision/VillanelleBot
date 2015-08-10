@@ -79,7 +79,7 @@ getRandomWords = function(cb) {
 		// minCorpusCount: "10000",
 		minCorpusCount: "20000",
 		maxCorpusCount: "-1",
-		minDictionaryCount: "10",
+		minDictionaryCount: "3",
 		maxDictionaryCount: "-1",
 		minLength: "3",
 		maxLength: "7",
@@ -136,23 +136,22 @@ cleanRandomWords = function(botData, result, cb) {
 	
 	// Reduce number of similarly rhyming words from the set. Compare array elements to one another
 	// and toss out matches based on last three characters. 
-
-	// for (var a = 0; a < botData.allWords.length-1; a++) { // No need to select last item to compare.
-	//     firstTrio = botData.allWords[a].substr(botData.allWords[a].length - 3);
+	for (var a = 0; a < botData.allWords.length-1; a++) { // No need to select last item to compare.
+	    firstTrio = botData.allWords[a].substr(botData.allWords[a].length - 3);
 	    
-	//     if (firstTrio == "ing") 
+	    if (firstTrio == "ing") 
 
-	//     { continue; }; // Allow words with these endings to remain (-ing, -nds, etc).
+	    { continue; }; // Allow words with these endings to remain (-ing, -nds, etc).
 	    
-	//     for (var b = botData.allWords.length - 1; b >= a+1; b--) { // No need to check word against itself.
-	//         checkTrio = botData.allWords[b].substr(botData.allWords[b].length - 3);
-	//         if (firstTrio == checkTrio) {
-	//             // Matching words, high chance for rhyme overlap. Remove.
-	//             console.log("Discarded: " + botData.allWords[a] + " / " + botData.allWords[b]);
-	//             botData.allWords.splice(b, 1);
-	//         }
-	//     }
-	// }
+	    for (var b = botData.allWords.length - 1; b >= a+1; b--) { // No need to check word against itself.
+	        checkTrio = botData.allWords[b].substr(botData.allWords[b].length - 3);
+	        if (firstTrio == checkTrio) {
+	            // Matching words, high chance for rhyme overlap. Remove.
+	            console.log("Discarded: " + botData.allWords[a] + " / " + botData.allWords[b]);
+	            botData.allWords.splice(b, 1);
+	        }
+	    }
+	}
 
 	cb(null, botData);
 };
@@ -181,7 +180,7 @@ findRhymes = function(word, cb) {
 	var wordnikRhymeOptions = {
 			useCanonical: "false",
 			relationshipTypes: "rhyme",
-			limitPerRelationshipType: "100",
+			limitPerRelationshipType: "120",
 			api_key: wordnikKey
 		};
 
@@ -226,20 +225,21 @@ createRhymeLists = function(botData, cb) {
 
 	var rhymingWordsArray = [],
 		minWordLength = 3,
-		maxWordLength = 5,
+		maxWordLength = 6,
 		maxArrays = 16,
-		minDesiredNumberOfRhymes = 15,
-		maxDesiredNumberOfRhymes = 20;
+		minArrays = 2,
+		minDesiredNumberOfRhymes = 20,
+		maxDesiredNumberOfRhymes = 30;
 
 	for (var i = 0; i < botData.allWords.length; i++) {
 		rhymingWordsArray[i] = [];
 		rhymingWordsArray[i].push(botData.allWords[i]);
 	}
 
-	// console.log('===========================');
-	// console.log('rhymingWordsArray');
-	// console.log('===========================');
-	// console.log(JSON.stringify(rhymingWordsArray));
+	console.log('===========================');
+	console.log('rhymingWordsArray');
+	console.log('===========================');
+	console.log(JSON.stringify(rhymingWordsArray));
 
 	for (var j = 0; j < botData.rhymingWordsData.length; j++) {
 		var currentArrayPos = botData.rhymingWordsData[j];
@@ -270,10 +270,10 @@ createRhymeLists = function(botData, cb) {
 		}
 	}
 
-	// console.log('===========================');
-	// console.log('Before: rhymingWordsArray');
-	// console.log('===========================');
-	// console.log(JSON.stringify(rhymingWordsArray));
+	console.log('===========================');
+	console.log('Before Cleanup: rhymingWordsArray');
+	console.log('===========================');
+	console.log(JSON.stringify(rhymingWordsArray));
 	
 	// Cycle through array, remove anything with less than desired number of rhymes.
 	for (var x = rhymingWordsArray.length - 1; x >= 0; x--) {
@@ -293,10 +293,10 @@ createRhymeLists = function(botData, cb) {
 		}
 	}
 
-	// console.log('===========================');
-	// console.log('After: rhymingWordsArray');
-	// console.log('===========================');
-	// console.log(JSON.stringify(rhymingWordsArray));
+	console.log('===========================');
+	console.log('AfterCleanup: rhymingWordsArray');
+	console.log('===========================');
+	console.log(JSON.stringify(rhymingWordsArray));
 
 
 	// Avoid hitting rate limit in a single call. Must be lower than 450 (22 arrays with 20 items each)
@@ -305,9 +305,11 @@ maxArrays = 5;	// TESTING ONLY - REMOVE THIS!
 	if (rhymingWordsArray.length > maxArrays) {
 		rhymingWordsArray = _.shuffle(rhymingWordsArray);
 		rhymingWordsArray = rhymingWordsArray.slice(0, maxArrays);
-	} else {
-		console.log("Total sets: " + rhymingWordsArray.length);
+	}
+
+	if (rhymingWordsArray.length < minArrays) {
 		cb("Not enough rhyming words.");
+		return;
 	}
 
 	botData.rhymingWordsArray = rhymingWordsArray;
@@ -347,6 +349,10 @@ getAllPublicTweets = function(botData, cb) {
 
 
 getTweetsByWord = function(word, cb) {
+	// word = word + "%20-RT%20-%40%20-http";
+	// word = word + "%20-RT";
+
+	console.log(word);
     t.get('search/tweets', {q: word, count: 100, result_type: 'recent', lang: 'en', include_entities: 'false'}, function(err, data, response) {
 		if (!err) {
 			
@@ -357,12 +363,13 @@ getTweetsByWord = function(word, cb) {
 				statsTracker.total++;
 
 				var tweetAsIs = data.statuses[i].text;
+				// console.log(tweetAsIs);
 
 				// Remove tweets with excessive uppercase
-				if (/[A-Z]{2}/.test(tweetAsIs)) {
-					statsTracker.rejectTracker.upper++;
-					continue;  
-				};
+				// if (/[A-Z]{2}/.test(tweetAsIs)) {
+				// 	statsTracker.rejectTracker.upper++;
+				// 	continue;  
+				// };
 
 				var currentTweet = data.statuses[i].text.toLowerCase();
 
@@ -392,7 +399,7 @@ getTweetsByWord = function(word, cb) {
 											url: "http://twitter.com/" + currentUserScreenName + "/status/" + currentTweetID
 										};
 										twitterResults.push(tweetData);
-										console.log("+ " + word + ": " + tweetData.tweet);
+										console.log("+ " + tweetData.tweet);
 									} else {
 										// console.log('- Length');
 										statsTracker.rejectTracker.length++;
