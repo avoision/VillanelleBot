@@ -23,6 +23,9 @@ var tumblrClient = tumblr.createClient({
 
 var wordnikKey = 			process.env.VILLANELLE_WORDNIK_KEY;
 
+// RiTa.js
+var lexicon = new rita.RiLexicon();
+
 // Bad words
 wordfilter.addWords(['nigga', 'niggas', 'nigg', 'pussies']);
 
@@ -47,6 +50,7 @@ var statsTracker = {
 		length: 0,
 		notEndWord: 0,
 		punctuation: 0,
+		slang: 0,
 		upper: 0
 	}
 };
@@ -316,28 +320,6 @@ maxArrays = 5;	// TESTING ONLY - REMOVE THIS!
 
 	botData.rhymingWordsArray = rhymingWordsArray;
 
-
-
-	var bob = "The quick brown fox jumped over the lazy egaergl.";
-	var bobArray = bob.split(" ");
-
-	var lexicon = new rita.RiLexicon();
-	
-	var rhymes = lexicon.rhymes(bobArray[2]);
-
-	console.log('rhymes: ' + rhymes);
-
-
-	// for (var p = 0; p < bobArray.length; p++) {
-	// 	// var wordCheck = rita.RiLexicon;
-	// 	console.log(bobArray[p]);
-	// 	// console.log(bobArray[p] + ": " + '');
-	// }
-
-
-	return;
-
-
 	cb(null, botData);
 }
 
@@ -382,7 +364,7 @@ getTweetsByWord = function(word, cb) {
 			
 			var twitterResults = [];
 
-var twoLetterWords = ['am','an','as','at','ax','be','by','go','he','hi','id','if','in','is','it','ma','me','my','no','oh','on','or','ow','ox','pa','pi','sh','so','to','up','us','we'];
+// var twoLetterWords = ['am','an','as','at','ax','be','by','go','he','hi','id','if','in','is','it','ma','me','my','no','oh','on','or','ow','ox','pa','pi','sh','so','to','up','us','we'];
 
 			// Loop through all returned statues
 			for (var i = 0; i < data.statuses.length; i++) {
@@ -413,7 +395,34 @@ var twoLetterWords = ['am','an','as','at','ax','be','by','go','he','hi','id','if
 							var regex = new RegExp(word + "[ ,?!.]+$");
 							if (regex.test(currentTweet)) {
 								// Do we have ellipses or ?! or other excessive punctuation? Reject.
-								if (/[,?!.]{2}/.test(currentTweet) == false) {				
+								if (/[,?!.]{2}/.test(currentTweet) == false) {		
+
+
+
+
+									// Too strict. tweets ending with punctuation are getting rejected. 
+									// Enough tweets will never be approved/found.
+									var tweetWordsArray = currentTweet.split(" "),
+										tweetHasSlang = false;
+
+									for (var p = 0; p < tweetWordsArray.length; p++) {
+										if (lexicon.containsWord(tweetWordsArray[p]) == undefined) {
+											console.log("Flagged: " + tweetWordsArray[p]);
+											tweetHasSlang = true;
+										};
+									};
+
+									if (tweetHasSlang) {
+										statsTracker.rejectTracker.slang++;
+										continue;					
+									};
+
+
+
+
+
+
+
 									// Keep under 50 characters in length;
 									if ((currentTweet.length <= 60) && (currentTweet.length >= 10)) {
 										statsTracker.accepted++;
