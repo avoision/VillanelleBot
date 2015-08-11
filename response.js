@@ -27,3 +27,9 @@ Nelan rase.
 Where’s my Mer Mer ?
 Get my bffff back. Little mair mair.
 David Silva needs to score a Hatrick now ahn ahn.
+And idk when it will fade.
+My soul is pissed foo .
+Hi, I’m Todd Caninequeen. Kaworu was the best eva imo.
+Lmfao . I know somebody was gonna say something rude .
+My mama ain’t make no Hoe !
+I love you Seraaaaaaaah! O, and you too Noel!

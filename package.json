@@ -18,6 +18,7 @@
         "wordfilter"        : "~0.1.8-1",
         "request"           : "~2.51.0",
         "emoji-regex"       : "~6.0.0",
-        "tumblr.js"         : "~0.0.5"
+        "tumblr.js"         : "~0.0.5",
+        "rita"              : "~1.0.951"
     }
 }

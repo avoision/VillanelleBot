@@ -6,6 +6,7 @@ var wordfilter    = require('wordfilter');
 var request       = require('request');
 var emojiRegex 	  = require('emoji-regex');
 var tumblr 		  = require('tumblr.js');
+var rita 		  = require('rita');
 
 var t = new Twit({
     consumer_key: 			process.env.VILLANELLE_TWIT_CONSUMER_KEY,
@@ -23,7 +24,7 @@ var tumblrClient = tumblr.createClient({
 var wordnikKey = 			process.env.VILLANELLE_WORDNIK_KEY;
 
 // Bad words
-wordfilter.addWords(['nigga', 'niggas', 'nigg']);
+wordfilter.addWords(['nigga', 'niggas', 'nigg', 'pussies']);
 
 // Custom characters
 wordfilter.addWords(['@','#', 'http', 'www']);
@@ -314,6 +315,28 @@ maxArrays = 5;	// TESTING ONLY - REMOVE THIS!
 	}
 
 	botData.rhymingWordsArray = rhymingWordsArray;
+
+
+
+	var bob = "The quick brown fox jumped over the lazy egaergl.";
+	var bobArray = bob.split(" ");
+
+	var lexicon = new rita.RiLexicon();
+	
+	var rhymes = lexicon.rhymes(bobArray[2]);
+
+	console.log('rhymes: ' + rhymes);
+
+
+	// for (var p = 0; p < bobArray.length; p++) {
+	// 	// var wordCheck = rita.RiLexicon;
+	// 	console.log(bobArray[p]);
+	// 	// console.log(bobArray[p] + ": " + '');
+	// }
+
+
+	return;
+
 
 	cb(null, botData);
 }
