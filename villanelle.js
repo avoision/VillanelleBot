@@ -91,7 +91,7 @@ getRandomWords = function(cb) {
 		maxDictionaryCount: "-1",
 		minLength: "3",
 		maxLength: "7",
-		limit: "50",
+		limit: "75",
 		api_key: wordnikKey
     };
 
@@ -237,7 +237,7 @@ createRhymeLists = function(botData, cb) {
 		maxArrays = 16,
 		minArrays = 2,
 		minDesiredNumberOfRhymes = 30,
-		maxDesiredNumberOfRhymes = 40;
+		maxDesiredNumberOfRhymes = 50;
 
 	for (var i = 0; i < botData.allWords.length; i++) {
 		rhymingWordsArray[i] = [];
@@ -403,7 +403,7 @@ getTweetsByWord = function(word, cb) {
 									var ritaTweet = currentTweet.replace(/[?.,-\/#!$%\^&\*;:{}=\-_`~()]/g,""),
 										ritaTweetWordsArray = ritaTweet.split(" "),
 										slangFound = 0,
-										maxSlangAllowed = 1,	// 1 or more limit seems fine. 0 seems to decrease success.
+										maxSlangAllowed = 0,	// 1 or more limit seems fine. 0 seems to decrease success.
 										hasSlang = false;
 
 									// Check lexicon for words, mark all else as slang
@@ -426,7 +426,7 @@ getTweetsByWord = function(word, cb) {
 									};
 
 									// Keep under 50 characters in length;
-									if ((currentTweet.length <= 60) && (currentTweet.length >= 20)) {
+									if ((currentTweet.length <= 50) && (currentTweet.length >= 25)) {
 										statsTracker.accepted++;
 										var tweetData = {
 											tweet: data.statuses[i].text,
@@ -518,14 +518,11 @@ gatherAndCleanPhrases = function(botData, cb) {
 		}
 	};
 
-	console.log(JSON.stringify(rhymesData));
-
 	botData.rhymeSchemeArray = rhymesData;
 	cb(null, botData);
 }
 
 checkRequirements = function(botData, cb) {
-
 	var rhymeSets = botData.rhymeSchemeArray,
 		totalRhymeSets = rhymeSets.length;
 
@@ -600,8 +597,8 @@ checkRequirements = function(botData, cb) {
 }
 
 formatPoem = function(botData, cb) {
-	// console.log("A Phrases: " + JSON.stringify(botData.aPhrases));
-	// console.log("B Phrases: " + JSON.stringify(botData.bPhrases));
+	console.log("A Phrases: " + JSON.stringify(botData.aPhrases));
+	console.log("B Phrases: " + JSON.stringify(botData.bPhrases));
 
 	getTitle = function() {
 		var theTitle = "",
@@ -737,6 +734,9 @@ rateLimitCheck = function(cb) {
 				totalSecsRemaining = Math.floor(msRemaining / 1000),
 				minRemaining = Math.floor(totalSecsRemaining/60),
 				secRemaining = totalSecsRemaining%60;
+
+			console.log("REMAINING: " + remaining);
+
 
 			if (minRemaining < 10) {
 				minRemaining = "0" + minRemaining;
