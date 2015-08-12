@@ -397,34 +397,34 @@ getTweetsByWord = function(word, cb) {
 								// Do we have ellipses or ?! or other excessive punctuation? Reject.
 								if (/[,?!.]{2}/.test(currentTweet) == false) {		
 
+									// Remove punctuation
+									var ritaTweet = currentTweet.replace(/[?.,-\/#!$%\^&\*;:{}=\-_`~()]/g,""),
+										ritaTweetWordsArray = ritaTweet.split(" "),
+										slangFound = 0,
+										maxSlangAllowed = 1,
+										hasSlang = false;
 
-
-
-									// Too strict. tweets ending with punctuation are getting rejected. 
-									// Enough tweets will never be approved/found.
-									var tweetWordsArray = currentTweet.split(" "),
-										tweetHasSlang = false;
-
-									for (var p = 0; p < tweetWordsArray.length; p++) {
-										if (lexicon.containsWord(tweetWordsArray[p]) == undefined) {
-											console.log("Flagged: " + tweetWordsArray[p]);
-											tweetHasSlang = true;
+									// Check lexicon for words, mark all else as slang
+									for (var p = 0; p < ritaTweetWordsArray.length; p++) {
+										if (lexicon.containsWord(ritaTweetWordsArray[p]) == undefined) {
+											console.log("Flagged: " + ritaTweetWordsArray[p]);
+											slangFound++;
+											
+											if (slangFound > maxSlangAllowed) {
+												console.log('Has Slang: ' + currentTweet);
+												hasSlang = true;
+												break;
+											};
 										};
 									};
 
-									if (tweetHasSlang) {
+									if (hasSlang) {
 										statsTracker.rejectTracker.slang++;
 										continue;					
 									};
 
-
-
-
-
-
-
 									// Keep under 50 characters in length;
-									if ((currentTweet.length <= 60) && (currentTweet.length >= 10)) {
+									if ((currentTweet.length <= 60) && (currentTweet.length >= 20)) {
 										statsTracker.accepted++;
 										var tweetData = {
 											tweet: data.statuses[i].text,
