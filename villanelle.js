@@ -27,7 +27,7 @@ var wordnikKey = 			process.env.VILLANELLE_WORDNIK_KEY;
 var lexicon = new rita.RiLexicon();
 
 // Bad words
-wordfilter.addWords(['nigga', 'niggas', 'nigg', 'pussies']);
+wordfilter.addWords(['nigga', 'niggas', 'nigg', 'pussies', 'gay']);
 
 // Custom characters
 wordfilter.addWords(['@','#', 'http', 'www']);
@@ -69,7 +69,9 @@ getRandomWords = function(cb) {
 		aPhrases: [],
 		bPhrases: [],
 		aPhrasesQuotaMet: false,
-		bPhrasesQuotaMet: false
+		bPhrasesQuotaMet: false,
+		tumblrPostID: 0,
+		tumblrPostTitle: ''
 	};
 
     var client = new Client();
@@ -401,17 +403,17 @@ getTweetsByWord = function(word, cb) {
 									var ritaTweet = currentTweet.replace(/[?.,-\/#!$%\^&\*;:{}=\-_`~()]/g,""),
 										ritaTweetWordsArray = ritaTweet.split(" "),
 										slangFound = 0,
-										maxSlangAllowed = 1,
+										maxSlangAllowed = 1,	// 1 or more limit seems fine. 0 seems to decrease success.
 										hasSlang = false;
 
 									// Check lexicon for words, mark all else as slang
 									for (var p = 0; p < ritaTweetWordsArray.length; p++) {
 										if (lexicon.containsWord(ritaTweetWordsArray[p]) == undefined) {
-											console.log("Flagged: " + ritaTweetWordsArray[p]);
+											// console.log("Flagged: " + ritaTweetWordsArray[p]);
 											slangFound++;
 											
 											if (slangFound > maxSlangAllowed) {
-												console.log('Has Slang: ' + currentTweet);
+												// console.log('Has Slang: ' + currentTweet);
 												hasSlang = true;
 												break;
 											};
@@ -628,6 +630,7 @@ formatPoem = function(botData, cb) {
 		    theTitle = theTitle.substr(0, theTitle.length-1);
 		};
 
+		botData.tumblrPostTitle = theTitle;
 		return theTitle;
 	}
 
@@ -697,11 +700,11 @@ formatPoem = function(botData, cb) {
 
 		+ "<p class=\"attribution\">Coding: <a href=\"http://twitter.com/avoision\">@avoision</a></p>";
 
-	cb(null, poemTitle, villanelle);
+	cb(null, botData, poemTitle, villanelle);
 }
 
 // Make it so
-publishPoem = function(poemTitle, villanelle, cb) {
+publishPoem = function(botData, poemTitle, villanelle, cb) {
 	var blogName = "villanellebot",
 		options = {
 			title: poemTitle,
@@ -711,6 +714,8 @@ publishPoem = function(poemTitle, villanelle, cb) {
 	tumblrClient.text(blogName, options, function(err, success) {
 		if (!err) {
 			console.log("Success: " + JSON.stringify(success));
+			botData.tumblrPostID = success.id;
+			console.log('http://villanellebot.tumblr.com/post/' + botData.tumblrPostID);
 		} else {
 			console.log("Errors: " + err);
 		}
