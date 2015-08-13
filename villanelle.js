@@ -85,7 +85,7 @@ getRandomWords = function(cb) {
     	hasDictionaryDef: "true",
 		includePartOfSpeech: randomPartOfSpeech,
 		// minCorpusCount: "10000",
-		minCorpusCount: "20000",
+		minCorpusCount: "17000",
 		maxCorpusCount: "-1",
 		minDictionaryCount: "3",
 		maxDictionaryCount: "-1",
@@ -729,13 +729,28 @@ rateLimitCheck = function(cb) {
 		if (!err) {
 			var dataRoot = data.resources.search['/search/tweets'],
 				limit = dataRoot.limit,
-				remaining = dataRoot.remaining;
+				remaining = dataRoot.remaining,
+				resetTime = dataRoot.reset + "000",
+				currentTime = (new Date).getTime().toString(),
+				msRemaining = resetTime - currentTime,
+				totalSecsRemaining = Math.floor(msRemaining / 1000),
+				minRemaining = Math.floor(totalSecsRemaining/60),
+				secRemaining = totalSecsRemaining%60;
+
+			if (secRemaining < 10) { secRemaining = "0" + secRemaining; }
 
 			var timeUntilReset = new Date(0);
 			timeUntilReset.setUTCSeconds(dataRoot.reset);
 
+			var hour = timeUntilReset.getHours();
+			if (hour < 10) { hour = "0" + hour; };
+			var min = timeUntilReset.getMinutes();
+			if (min < 10) { min = "0" + min; };
+			var sec = timeUntilReset.getSeconds();
+			if (sec < 10) { sec = "0" + sec; };
+
 			console.log("Rate limit: " + remaining + "/" + limit);
-			console.log("Next reset: " + timeUntilReset.getHours() + ":" + timeUntilReset.getMinutes() + ":" + timeUntilReset.getSeconds());
+			console.log("Next reset at: " + hour + ":" + min + ":" + sec + " in " + minRemaining + ":" + secRemaining );
 
 			console.log('---------------------------');
 			console.log(JSON.stringify(statsTracker));
