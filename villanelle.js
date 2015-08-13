@@ -85,7 +85,7 @@ getRandomWords = function(cb) {
     	hasDictionaryDef: "true",
 		includePartOfSpeech: randomPartOfSpeech,
 		// minCorpusCount: "10000",
-		minCorpusCount: "17000",
+		minCorpusCount: "20000",
 		maxCorpusCount: "-1",
 		minDictionaryCount: "3",
 		maxDictionaryCount: "-1",
