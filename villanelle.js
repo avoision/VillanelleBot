@@ -751,15 +751,15 @@ run = function() {
 	console.log("========= Starting! =========");
 
     async.waterfall([
-		// getRandomWords,
-		// cleanRandomWords,
-		// getAllRhymes,
-		// createRhymeLists,
-		// getAllPublicTweets,
-		// gatherAndCleanPhrases,
-		// checkRequirements,
-		// formatPoem,
-		// publishPoem,
+		getRandomWords,
+		cleanRandomWords,
+		getAllRhymes,
+		createRhymeLists,
+		getAllPublicTweets,
+		gatherAndCleanPhrases,
+		checkRequirements,
+		formatPoem,
+		publishPoem,
 		rateLimitCheck
     ],
     function(err, botData) {
