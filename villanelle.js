@@ -145,10 +145,10 @@ cleanRandomWords = function(botData, result, cb) {
 	// Reduce number of similarly rhyming words from the set. Compare array elements to one another
 	// and toss out matches based on last three characters. 
 	for (var a = 0; a < botData.allWords.length-1; a++) { // No need to select last item to compare.
-	    firstTrio = botData.allWords[a].substr(botData.allWords[a].length - 4);
+	    firstTrio = botData.allWords[a].substr(botData.allWords[a].length - 3);
 	    
-	    // if (firstTrio == "ing") 
-	    // { continue; }; // Allow words with these endings to remain (-ing, -nds, etc).
+	    if (firstTrio == "ing") 
+	    { continue; }; // Allow words with these endings to remain (-ing, -nds, etc).
 	    
 	    for (var b = botData.allWords.length - 1; b >= a+1; b--) { // No need to check word against itself.
 	        checkTrio = botData.allWords[b].substr(botData.allWords[b].length - 3);
