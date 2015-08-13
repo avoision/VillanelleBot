@@ -36,7 +36,7 @@ wordfilter.addWords(['@','#', 'http', 'www']);
 wordfilter.addWords([' ur ', ' u ']);
 
 // Lyrics and annoyingly frequent rhyme words to ignore
-var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade']; 
+var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented']; 
 // Possible additions: rase, dase
 
 // Tracking the rejects
@@ -145,11 +145,10 @@ cleanRandomWords = function(botData, result, cb) {
 	// Reduce number of similarly rhyming words from the set. Compare array elements to one another
 	// and toss out matches based on last three characters. 
 	for (var a = 0; a < botData.allWords.length-1; a++) { // No need to select last item to compare.
-	    firstTrio = botData.allWords[a].substr(botData.allWords[a].length - 3);
+	    firstTrio = botData.allWords[a].substr(botData.allWords[a].length - 4);
 	    
-	    if (firstTrio == "ing") 
-
-	    { continue; }; // Allow words with these endings to remain (-ing, -nds, etc).
+	    // if (firstTrio == "ing") 
+	    // { continue; }; // Allow words with these endings to remain (-ing, -nds, etc).
 	    
 	    for (var b = botData.allWords.length - 1; b >= a+1; b--) { // No need to check word against itself.
 	        checkTrio = botData.allWords[b].substr(botData.allWords[b].length - 3);
@@ -366,8 +365,6 @@ getTweetsByWord = function(word, cb) {
 			
 			var twitterResults = [];
 
-// var twoLetterWords = ['am','an','as','at','ax','be','by','go','he','hi','id','if','in','is','it','ma','me','my','no','oh','on','or','ow','ox','pa','pi','sh','so','to','up','us','we'];
-
 			// Loop through all returned statues
 			for (var i = 0; i < data.statuses.length; i++) {
 				statsTracker.total++;
@@ -517,6 +514,11 @@ gatherAndCleanPhrases = function(botData, cb) {
 			rhymesData.splice(x, 1);
 		}
 	};
+
+	// Removing duplicates
+	for (var a = 0; a < rhymesData.length; a++) {
+		rhymesData[a] = _.uniq(rhymesData[a]);
+	} 
 
 	botData.rhymeSchemeArray = rhymesData;
 	cb(null, botData);
@@ -727,26 +729,13 @@ rateLimitCheck = function(cb) {
 		if (!err) {
 			var dataRoot = data.resources.search['/search/tweets'],
 				limit = dataRoot.limit,
-				remaining = dataRoot.remaining,
-				resetTime = dataRoot.reset + "000",
-				currentTime = (new Date).getTime().toString(),
-				msRemaining = resetTime - currentTime,
-				totalSecsRemaining = Math.floor(msRemaining / 1000),
-				minRemaining = Math.floor(totalSecsRemaining/60),
-				secRemaining = totalSecsRemaining%60;
+				remaining = dataRoot.remaining;
 
-			console.log("REMAINING: " + remaining);
+			var timeUntilReset = new Date(0);
+			timeUntilReset.setUTCSeconds(dataRoot.reset);
 
-
-			if (minRemaining < 10) {
-				minRemaining = "0" + minRemaining;
-			}
-
-			if (secRemaining < 10) {
-				secRemaining = "0" + secRemaining;
-			}
 			console.log("Rate limit: " + remaining + "/" + limit);
-			console.log("Next reset: " + minRemaining + ":" + secRemaining);
+			console.log("Next reset: " + timeUntilReset.getHours() + ":" + timeUntilReset.getMinutes() + ":" + timeUntilReset.getSeconds());
 
 			console.log('---------------------------');
 			console.log(JSON.stringify(statsTracker));
@@ -762,15 +751,15 @@ run = function() {
 	console.log("========= Starting! =========");
 
     async.waterfall([
-		getRandomWords,
-		cleanRandomWords,
-		getAllRhymes,
-		createRhymeLists,
-		getAllPublicTweets,
-		gatherAndCleanPhrases,
-		checkRequirements,
-		formatPoem,
-		publishPoem,
+		// getRandomWords,
+		// cleanRandomWords,
+		// getAllRhymes,
+		// createRhymeLists,
+		// getAllPublicTweets,
+		// gatherAndCleanPhrases,
+		// checkRequirements,
+		// formatPoem,
+		// publishPoem,
 		rateLimitCheck
     ],
     function(err, botData) {
