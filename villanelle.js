@@ -60,7 +60,7 @@ getRandomWords = function(cb) {
 	var botData = {
 		counter: 0,
 		wordCounter: 0,
-		maxWordCounter: 60,
+		maxWordCounter: 70,
 		allWords: [],
 		rhymingWordsData: [],
 		rhymingWordsArray: [],
@@ -77,15 +77,15 @@ getRandomWords = function(cb) {
     var client = new Client();
     var partsOfSpeech = ["noun", "adjective", "verb"],
     	randomPos = Math.floor(Math.random() * partsOfSpeech.length),
-    	// randomPartOfSpeech = partsOfSpeech[randomPos];
-    	randomPartOfSpeech = partsOfSpeech[0];
+    	randomPartOfSpeech = partsOfSpeech[randomPos];
+    	// randomPartOfSpeech = partsOfSpeech[0];
 
 
     var wordnikRandomOptions = {
     	hasDictionaryDef: "true",
 		includePartOfSpeech: randomPartOfSpeech,
 		// minCorpusCount: "10000",
-		minCorpusCount: "20000",
+		minCorpusCount: "30000",
 		maxCorpusCount: "-1",
 		minDictionaryCount: "3",
 		maxDictionaryCount: "-1",
@@ -225,10 +225,10 @@ findRhymes = function(word, cb) {
 createRhymeLists = function(botData, cb) {
 	console.log("========= Create Rhyme Lists =========");	
 	
-	// console.log('---------------------------');
-	// console.log("botData.allWords");
-	// console.log('---------------------------');
-	// console.log(JSON.stringify(botData.allWords));
+	console.log('---------------------------');
+	console.log("botData.allWords");
+	console.log('---------------------------');
+	console.log(JSON.stringify(botData.allWords));
 
 	var rhymingWordsArray = [],
 		minWordLength = 3,
@@ -300,10 +300,10 @@ createRhymeLists = function(botData, cb) {
 		}
 	}
 
-// console.log('===========================');
-// console.log('AfterCleanup: rhymingWordsArray');
-// console.log('===========================');
-// console.log(JSON.stringify(rhymingWordsArray));
+console.log('===========================');
+console.log('AfterCleanup: rhymingWordsArray');
+console.log('===========================');
+console.log(JSON.stringify(rhymingWordsArray));
 
 
 	// Avoid hitting rate limit in a single call. Must be lower than 450 (22 arrays with 20 items each)
