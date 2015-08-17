@@ -36,8 +36,10 @@ wordfilter.addWords(['@','#', 'http', 'www']);
 wordfilter.addWords([' ur ', ' u ']);
 
 // Lyrics and annoyingly frequent rhyme words to ignore
-var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented']; 
-// Possible additions: rase, dase
+var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied']; 
+
+// Possible additions: rase, dase, ion, mane, mayne, guise
+// So many terrible mistakes, due to auto-correct and laziness. I weep for our future.
 
 // Tracking the rejects
 var statsTracker = {
@@ -422,15 +424,15 @@ getTweetsByWord = function(word, cb) {
 				var ritaTweet = currentTweet.replace(/[?.,-\/#!$%\^&\*;:{}=\-_`~()]/g,""),
 					ritaTweetWordsArray = ritaTweet.split(" "),
 					slangFound = 0,
-					maxSlangAllowed = 0,	// 1 or more limit seems fine. 0 seems to decrease success.
+					maxSlangAllowed = 1,	// 1 or more limit seems fine. 0 seems to decrease success.
 					hasSlang = false;
 
 
-				console.log(ritaTweetWordsArray);
-				console.log("Word: " + word);
-				console.log("Length: " + ritaTweetWordsArray.length);
-				console.log("Word at: " + ritaTweetWordsArray.indexOf(word));
-				console.log(' --------------------------- ');
+				// console.log(ritaTweetWordsArray);
+				// console.log("Word: " + word);
+				// console.log("Length: " + ritaTweetWordsArray.length);
+				// console.log("Word at: " + ritaTweetWordsArray.indexOf(word));
+				// console.log(' --------------------------- ');
 
 
 
