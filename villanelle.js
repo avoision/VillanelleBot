@@ -285,7 +285,7 @@ createRhymeLists = function(botData, cb) {
 	// Cycle through array, remove anything with less than desired number of rhymes.
 	for (var x = rhymingWordsArray.length - 1; x >= 0; x--) {
 
-		if (rhymingWordsArray[x].length < maxDesiredNumberOfRhymes) {
+		if (rhymingWordsArray[x].length < minDesiredNumberOfRhymes) {
 			rhymingWordsArray.splice(x, 1);
 			continue;
 		};
@@ -744,6 +744,7 @@ rateLimitCheck = function(cb) {
 
 			var hour = timeUntilReset.getHours();
 			if (hour < 10) { hour = "0" + hour; };
+			if (hour > 12) { hour = hour - 12; };
 			var min = timeUntilReset.getMinutes();
 			if (min < 10) { min = "0" + min; };
 			var sec = timeUntilReset.getSeconds();
