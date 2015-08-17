@@ -385,81 +385,84 @@ getTweetsByWord = function(word, cb) {
 					currentUserScreenName = data.statuses[i].user.screen_name;
 
 				// Does the current tweet contain a number?
-				if (/[0-9]+/.test(currentTweet) == false) {
-					// Does the current tweet contain offensive words?
-					if (!wordfilter.blacklisted(currentTweet)) {
-						// Does the tweet contain an emoji?
-						if (emojiRegex().test(currentTweet) == false) {
-							// Checking if word is at the end of a sentence.
-							var regex = new RegExp(word + "[ ,?!.]+$");
-							if (regex.test(currentTweet)) {
-								// Do we have ellipses or ?! or other excessive punctuation? Reject.
-								if (/[,?!.]{2}/.test(currentTweet) == false) {		
-
-									// Remove punctuation
-									var ritaTweet = currentTweet.replace(/[?.,-\/#!$%\^&\*;:{}=\-_`~()]/g,""),
-										ritaTweetWordsArray = ritaTweet.split(" "),
-										slangFound = 0,
-										maxSlangAllowed = 0,	// 1 or more limit seems fine. 0 seems to decrease success.
-										hasSlang = false;
-
-									// Check lexicon for words, mark all else as slang
-									for (var p = 0; p < ritaTweetWordsArray.length; p++) {
-										if (lexicon.containsWord(ritaTweetWordsArray[p]) == undefined) {
-											// console.log("Flagged: " + ritaTweetWordsArray[p]);
-											slangFound++;
-											
-											if (slangFound > maxSlangAllowed) {
-												// console.log('Has Slang: ' + currentTweet);
-												hasSlang = true;
-												break;
-											};
-										};
-									};
-
-									if (hasSlang) {
-										statsTracker.rejectTracker.slang++;
-										continue;					
-									};
-
-									// Keep under 50 characters in length;
-									if ((currentTweet.length <= 50) && (currentTweet.length >= 25)) {
-										statsTracker.accepted++;
-										var tweetData = {
-											tweet: data.statuses[i].text,
-											tweetID: currentTweetID,
-											userID: currentUserID,
-											userScreenName: currentUserScreenName,
-											url: "http://twitter.com/" + currentUserScreenName + "/status/" + currentTweetID
-										};
-										twitterResults.push(tweetData);
-										console.log("+ " + tweetData.tweet);
-									} else {
-										// console.log('- Length');
-										statsTracker.rejectTracker.length++;
-									}
-								} else {
-									// console.log('- ?!...');
-									statsTracker.rejectTracker.punctuation++;
-								}
-							} else {
-								// console.log('- Not Ending');
-								statsTracker.rejectTracker.notEndWord++;
-							}
-
-						} else {
-							// console.log('- Emjoji');
-							statsTracker.rejectTracker.emoji++;
-						}
-					} else {
-						// console.log('- Blacklist');
-						statsTracker.rejectTracker.blacklist++;
-					}
-				} else {
-					// console.log('- Number');
+				if (/[0-9]+/.test(currentTweet)) {		
 					statsTracker.rejectTracker.hasNumber++;
+					continue;
+				}
+
+				// Does the current tweet contain offensive words?
+				if (wordfilter.blacklisted(currentTweet)) {
+					statsTracker.rejectTracker.blacklist++;
+					continue;
+				}
+
+				// Does the tweet contain an emoji?
+				if (emojiRegex().test(currentTweet)) {
+					statsTracker.rejectTracker.emoji++;
+					continue;
+				}
+
+				// Do we have ellipses or ?! or other excessive punctuation? Reject.
+				if (/[,?!.]{2}/.test(currentTweet)) {
+					statsTracker.rejectTracker.punctuation++;
+					continue;
+				}
+
+
+// Begin checking here for end word or "last five words."
+
+				// Checking if word is at the end of a sentence.
+				var regex = new RegExp(word + "[ ,?!.]+$");
+				if (regex.test(currentTweet) == false) {
+					statsTracker.rejectTracker.notEndWord++;
+					continue;
+				}
+
+				// Remove punctuation
+				var ritaTweet = currentTweet.replace(/[?.,-\/#!$%\^&\*;:{}=\-_`~()]/g,""),
+					ritaTweetWordsArray = ritaTweet.split(" "),
+					slangFound = 0,
+					maxSlangAllowed = 0,	// 1 or more limit seems fine. 0 seems to decrease success.
+					hasSlang = false;
+
+				// Check lexicon for words, mark all else as slang
+				for (var p = 0; p < ritaTweetWordsArray.length; p++) {
+					if (lexicon.containsWord(ritaTweetWordsArray[p]) == undefined) {
+						// console.log("Flagged: " + ritaTweetWordsArray[p]);
+						slangFound++;
+						
+						if (slangFound > maxSlangAllowed) {
+							// console.log('Has Slang: ' + currentTweet);
+							hasSlang = true;
+							break;
+						};
+					};
+				};
+
+				if (hasSlang) {
+					statsTracker.rejectTracker.slang++;
+					continue;					
+				};
+
+				// Keep under 50 characters in length;
+				if ((currentTweet.length <= 50) && (currentTweet.length >= 25)) {
+					statsTracker.accepted++;
+					var tweetData = {
+						tweet: data.statuses[i].text,
+						tweetID: currentTweetID,
+						userID: currentUserID,
+						userScreenName: currentUserScreenName,
+						url: "http://twitter.com/" + currentUserScreenName + "/status/" + currentTweetID
+					};
+					twitterResults.push(tweetData);
+					console.log("+ " + tweetData.tweet);
+				} else {
+					// console.log('- Length');
+					statsTracker.rejectTracker.length++;
 				}
 			}
+
+
 
 			// Do we have more than one example with this word? 
 			// If so, randomize and reduce to one.
@@ -743,7 +746,6 @@ rateLimitCheck = function(cb) {
 			timeUntilReset.setUTCSeconds(dataRoot.reset);
 
 			var hour = timeUntilReset.getHours();
-			if (hour < 10) { hour = "0" + hour; };
 			if (hour > 12) { hour = hour - 12; };
 			var min = timeUntilReset.getMinutes();
 			if (min < 10) { min = "0" + min; };
@@ -785,14 +787,5 @@ run = function() {
 		}
     });
 }
-
-	// setInterval(function() {
-	//   try {
-	//     run();
-	//   }
-	//   catch (e) {
-	//     console.log(e);
-	//   }
-	// }, 60000 * 15);
 
 run();
