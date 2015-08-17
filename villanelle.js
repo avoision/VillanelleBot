@@ -425,6 +425,15 @@ getTweetsByWord = function(word, cb) {
 					maxSlangAllowed = 0,	// 1 or more limit seems fine. 0 seems to decrease success.
 					hasSlang = false;
 
+
+				console.log(ritaTweetWordsArray);
+				console.log("Word: " + word);
+				console.log("Length: " + ritaTweetWordsArray.length);
+				console.log("Word at: " + ritaTweetWordsArray.indexOf(word));
+				console.log(' --------------------------- ');
+
+
+
 				// Check lexicon for words, mark all else as slang
 				for (var p = 0; p < ritaTweetWordsArray.length; p++) {
 					if (lexicon.containsWord(ritaTweetWordsArray[p]) == undefined) {

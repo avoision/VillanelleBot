@@ -39,6 +39,14 @@ Parsing Tweet
 ===========================
 1) Is word within last 5 words of the tweet?
 2) If so, set the following:
+
+For tweetSuffix, check last character of tweet. 
+	If punctuation, add space.
+	If space(s), remove.
+		Check last char again.
+	 	If punctuation, add space.
+	 	Otherwise, add period and space.
+
 	var tweetData = {
 		tweet: data.statuses[i].text,
 		tweetID: currentTweetID,
