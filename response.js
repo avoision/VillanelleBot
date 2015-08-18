@@ -51,7 +51,7 @@ For tweetSuffix, check last character of tweet.
 		tweet: data.statuses[i].text,
 		tweetID: currentTweetID,
 	
-		isMultiLine = true,
+		multiline = true,
 		tweetPrefix = "I have no real plan here. The how",
 		tweetSuffix = "of it escapes me." + " "
 	

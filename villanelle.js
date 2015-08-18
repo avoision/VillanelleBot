@@ -45,12 +45,13 @@ var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arc
 var statsTracker = {
 	total: 0,
 	accepted: 0,
+	hasMultiline: 0,	
 	rejectTracker: {
 		blacklist: 0,
 		emoji: 0,
 		hasNumber: 0,
 		length: 0,
-		notEndWord: 0,
+		notNearEnd: 0,
 		punctuation: 0,
 		slang: 0,
 		upper: 0
@@ -414,25 +415,46 @@ getTweetsByWord = function(word, cb) {
 // Begin checking here for end word or "last five words."
 
 				// Checking if word is at the end of a sentence.
-				var regex = new RegExp(word + "[ ,?!.]+$");
-				if (regex.test(currentTweet) == false) {
-					statsTracker.rejectTracker.notEndWord++;
-					continue;
-				}
+				// var regex = new RegExp(word + "[ ,?!.]+$");
+				// if (regex.test(currentTweet) == false) {
+				// 	statsTracker.rejectTracker.notEndWord++;
+				// 	continue;
+				// }
 
 				// Remove punctuation
 				var ritaTweet = currentTweet.replace(/[?.,-\/#!$%\^&\*;:{}=\-_`~()]/g,""),
-					ritaTweetWordsArray = ritaTweet.split(" "),
-					slangFound = 0,
+					ritaTweetWordsArray = ritaTweet.split(" ");
+				
+				var slangFound = 0,
 					maxSlangAllowed = 1,	// 1 or more limit seems fine. 0 seems to decrease success.
 					hasSlang = false;
 
+				var wordPos = ritaTweetWordsArray.lastIndexOf(word) + 1, 
+					maxDistanceUntilEnd = 4,
+					isMultiline = false;
 
-				// console.log(ritaTweetWordsArray);
-				// console.log("Word: " + word);
-				// console.log("Length: " + ritaTweetWordsArray.length);
-				// console.log("Word at: " + ritaTweetWordsArray.indexOf(word));
-				// console.log(' --------------------------- ');
+				// Is our word within X characters of the end of the tweet?
+				if (wordPos <= maxDistanceUntilEnd ) {
+					if (wordPos > 1) {
+						isMultiline = true;
+						var wordPosStart = data.statuses[i].text.lastIndexOf(word),
+							wordPosEnd = wordPosStart + word.length;
+	    
+						var prefix = data.statuses[i].text.slice(0, wordPosStart),
+							suffix = data.statuses[i].text.slice(wordPosStart);
+
+// Do some checking here, to determine if last character in suffix is punctuation, or space, or what.
+
+
+					} else {
+						isMultiline = false;
+						var prefix = '',
+							suffix = '';
+					};
+				} else {
+					statsTracker.rejectTracker.notNearEnd++;
+					continue;
+				}
 
 
 
@@ -455,18 +477,32 @@ getTweetsByWord = function(word, cb) {
 					continue;					
 				};
 
+
+// Revisit character length logic. Set Prefix/Suffix to 0, and use subtraction for one formula?
+// Or, set tweetData first, then check for length requirements.
+
 				// Keep under 50 characters in length;
 				if ((currentTweet.length <= 50) && (currentTweet.length >= 25)) {
-					statsTracker.accepted++;
+
 					var tweetData = {
 						tweet: data.statuses[i].text,
 						tweetID: currentTweetID,
+						multiline: isMultiline,
+						tweetPrefix: prefix,
+						tweetSuffix: suffix,
 						userID: currentUserID,
 						userScreenName: currentUserScreenName,
 						url: "http://twitter.com/" + currentUserScreenName + "/status/" + currentTweetID
 					};
-					twitterResults.push(tweetData);
-					console.log("+ " + tweetData.tweet);
+
+// Ignore multiline matches. Doing this for now, to avoid breaking.
+					if (isMultiline == false) {
+						statsTracker.accepted++;
+						twitterResults.push(tweetData);
+						console.log("+ " + tweetData.tweet);						
+					} else {
+						statsTracker.hasMultiline++;
+					}
 				} else {
 					// console.log('- Length');
 					statsTracker.rejectTracker.length++;
