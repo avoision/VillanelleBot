@@ -362,7 +362,10 @@ getTweetsByWord = function(word, cb) {
 	// word = word + "%20-RT%20-%40%20-http";
 	var suffix = "%20-RT%20-%40%20-http";
 
+	console.log('+++++++++++++++++++++++++++');
 	console.log(word);
+	console.log('+++++++++++++++++++++++++++');
+
     t.get('search/tweets', {q: word + suffix, count: 100, result_type: 'recent', lang: 'en', include_entities: 'false'}, function(err, data, response) {
 		if (!err) {
 			
@@ -434,20 +437,47 @@ getTweetsByWord = function(word, cb) {
 					isMultiline = false;
 
 				// Is our word within X characters of the end of the tweet?
-				if (wordPos <= maxDistanceUntilEnd ) {
-					if (wordPos > 1) {
+				if ((ritaTweetWordsArray.length - wordPos) <= maxDistanceUntilEnd ) {
+					if ((ritaTweetWordsArray.length - wordPos) > 1) {
 						isMultiline = true;
-						var wordPosStart = data.statuses[i].text.lastIndexOf(word),
-							wordPosEnd = wordPosStart + word.length;
+						var wordPosStart = data.statuses[i].text.toLowerCase().lastIndexOf(word),
+							wordPosEnd = wordPosStart + word.length + 1;
 	    
-						var prefix = data.statuses[i].text.slice(0, wordPosStart),
-							suffix = data.statuses[i].text.slice(wordPosStart);
+						var prefix = data.statuses[i].text.slice(0, wordPosEnd),
+							suffix = data.statuses[i].text.slice(wordPosEnd);
+
+							if (suffix.charAt(0) == " ") {
+								suffix = suffix.slice(1);
+							};
+
+							// console.log('currentTweet: ' + currentTweet);
+							// console.log('prefix: ' + prefix);
+							// console.log('suffix: ' + suffix);
+
+// Make sure prefix/suffix is working properly.
+// Add check to catch spaces, punctuation after word. Move from suffix to prefix.
+
+// word: shrine
+// currentTweet: our pari in the shrine was a papi.
+// prefix: Our p
+// suffix: ari in the Shrine was a papi.
+
+// currentTweet: everybody won't make it.
+// prefix: Everybody won
+// suffix: 't make it.
 
 						// Do some checking here, to determine if last character in suffix is punctuation.
 						// If not, skip
 						if (/[,?!.]/.test(suffix.charAt(suffix.length-1))) {
 							suffix += " ";
+
+
+
+
+
+
 						} else {
+// Add period and keep?
 							// console.log("Rejected, no punctuation: " + suffix);
 							statsTracker.rejectTracker.notNearEnd++;
 							continue;
@@ -502,7 +532,7 @@ getTweetsByWord = function(word, cb) {
 					};
 
 
-					if (isMultiline == false) {
+					if (isMultiline) {
 						statsTracker.hasMultiline++;						
 					}
 
@@ -510,14 +540,6 @@ getTweetsByWord = function(word, cb) {
 					twitterResults.push(tweetData);
 					console.log("+ " + tweetData.tweet);	
 
-// Ignore multiline matches. Doing this for now, to avoid breaking.
-					// if (isMultiline == false) {
-					// 	statsTracker.accepted++;
-					// 	twitterResults.push(tweetData);
-					// 	console.log("+ " + tweetData.tweet);						
-					// } else {
-					// 	statsTracker.hasMultiline++;
-					// }
 				} else {
 					// console.log('- Length');
 					statsTracker.rejectTracker.length++;
@@ -593,8 +615,6 @@ checkRequirements = function(botData, cb) {
 	var rhymeSets = botData.rhymeSchemeArray,
 		totalRhymeSets = rhymeSets.length;
 
-	console.log(JSON.stringify(rhymeSets));
-
 	if (totalRhymeSets >= 2) {
 
 		// Locate "A Phrases." We need 7.
@@ -641,22 +661,23 @@ checkRequirements = function(botData, cb) {
 					};
 
 
-					if (totalMultilines > (totalNeededLines - regularPhrases.length))
+					if (totalMultilines > (totalNeededLines - regularPhrases.length)) {
 						multilinePhrases = multilinePhrases.slice(0, regularPhrases.length);
+					}
+
+					var combinedPhrases = regularPhrases.concat(multilinePhrases);
+
+					botData.aPhrases[0] = combinedPhrases[0];
+					botData.aPhrases[1] = combinedPhrases[1];
+
+					var remainingPhrases = combinedPhrases.slice(2);
+					remainingPhrases = _.shuffle(remainingPhrases);
+
+					botData.aPhrases = botData.aPhrases.concat(remainingPhrases)
+					botData.aPhrasesQuotaMet = true;
+					rhymeSets.splice(i, 1);
+					break;
 				}
-
-				var combinedPhrases = regularPhrases.concat(multilinePhrases);
-
-				botData.aPhrases[0] = combinedPhrases[0];
-				botData.aPhrases[1] = combinedPhrases[1];
-
-				var remainingPhrases = combinedPhrases.slice(2);
-				remainingPhrases = _.shuffle(remainingPhrases);
-
-				botData.aPhrases = botData.aPhrases.concat(remainingPhrases)
-				botData.aPhrasesQuotaMet = true;
-				rhymeSets.splice(i, 1);
-				break;
 			}
 		}
 
@@ -665,13 +686,26 @@ checkRequirements = function(botData, cb) {
 			for (var j = 0; j < rhymeSets.length; j++) {
 
 				// Remove all multilines
-				var regularPhrases = [];
+				var allPhrases = [],
+					regularPhrases = [];
 
-				for (var z = 0; z < rhymeSets[j].length; z++) {
-					if ((rhymeSets[j].multiline) == false) {
-						regularPhrases.push(rhymeSets[j]);
+				allPhrases = rhymeSets[j];
+
+				// console.log("---------");
+				// console.log(JSON.stringify(rhymeSets[j]));
+
+				for (var z = 0; z < allPhrases.length; z++) {
+					// console.log("z: " + z);
+					// console.log('allPhrases[z]: ' + JSON.stringify(allPhrases[z]));
+
+					if ((allPhrases[z][0].multiline) == false) {
+						regularPhrases.push(allPhrases[z]);
 					} 
 				};
+
+				// console.log('+++++++++++++++++++++++++++');
+				// console.log(JSON.stringify(regularPhrases));
+				// console.log('+++++++++++++++++++++++++++');
 
 				rhymeSets[j] = regularPhrases;
 
@@ -761,6 +795,7 @@ formatPoem = function(botData, cb) {
 	
 	A1 = botData.aPhrases[0];
 	A2 = botData.aPhrases[1];
+
 	a1 = botData.aPhrases[2];
 	a2 = botData.aPhrases[3];
 	a3 = botData.aPhrases[4];
