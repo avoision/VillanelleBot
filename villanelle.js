@@ -148,14 +148,14 @@ cleanRandomWords = function(botData, result, cb) {
 	// Reduce number of similarly rhyming words from the set. Compare array elements to one another
 	// and toss out matches based on last three characters. 
 	for (var a = 0; a < botData.allWords.length-1; a++) { // No need to select last item to compare.
-	    firstTrio = botData.allWords[a].substr(botData.allWords[a].length - 3);
+	    firstSuffix = botData.allWords[a].substr(botData.allWords[a].length - 4);
 	    
-	    if (firstTrio == "ing") 
-	    { continue; }; // Allow words with these endings to remain (-ing, -nds, etc).
+	    // if (firstSuffix == "ing") 
+	    // { continue; }; // Allow words with these endings to remain (-ing, -nds, etc).
 	    
 	    for (var b = botData.allWords.length - 1; b >= a+1; b--) { // No need to check word against itself.
-	        checkTrio = botData.allWords[b].substr(botData.allWords[b].length - 3);
-	        if (firstTrio == checkTrio) {
+	        checkSuffix = botData.allWords[b].substr(botData.allWords[b].length - 4);
+	        if (firstSuffix == checkSuffix) {
 	            // Matching words, high chance for rhyme overlap. Remove.
 	            console.log("Discarded: " + botData.allWords[a] + " / " + botData.allWords[b]);
 	            botData.allWords.splice(b, 1);
@@ -228,10 +228,10 @@ findRhymes = function(word, cb) {
 createRhymeLists = function(botData, cb) {
 	console.log("========= Create Rhyme Lists =========");	
 	
-	console.log('---------------------------');
-	console.log("botData.allWords");
-	console.log('---------------------------');
-	console.log(JSON.stringify(botData.allWords));
+	// console.log('---------------------------');
+	// console.log("botData.allWords");
+	// console.log('---------------------------');
+	// console.log(JSON.stringify(botData.allWords));
 
 	var rhymingWordsArray = [],
 		minWordLength = 3,
@@ -303,10 +303,10 @@ createRhymeLists = function(botData, cb) {
 		}
 	}
 
-console.log('===========================');
-console.log('AfterCleanup: rhymingWordsArray');
-console.log('===========================');
-console.log(JSON.stringify(rhymingWordsArray));
+// console.log('===========================');
+// console.log('AfterCleanup: rhymingWordsArray');
+// console.log('===========================');
+// console.log(JSON.stringify(rhymingWordsArray));
 
 
 	// Avoid hitting rate limit in a single call. Must be lower than 450 (22 arrays with 20 items each)
@@ -443,9 +443,15 @@ getTweetsByWord = function(word, cb) {
 						var prefix = data.statuses[i].text.slice(0, wordPosStart),
 							suffix = data.statuses[i].text.slice(wordPosStart);
 
-// Do some checking here, to determine if last character in suffix is punctuation, or space, or what.
-
-
+						// Do some checking here, to determine if last character in suffix is punctuation.
+						// If not, skip
+						if (/[,?!.]/.test(suffix.charAt(suffix.length-1))) {
+							suffix += " ";
+						} else {
+							// console.log("Rejected, no punctuation: " + suffix);
+							statsTracker.rejectTracker.notNearEnd++;
+							continue;
+						}
 					} else {
 						isMultiline = false;
 						var prefix = '',
@@ -495,14 +501,23 @@ getTweetsByWord = function(word, cb) {
 						url: "http://twitter.com/" + currentUserScreenName + "/status/" + currentTweetID
 					};
 
-// Ignore multiline matches. Doing this for now, to avoid breaking.
+
 					if (isMultiline == false) {
-						statsTracker.accepted++;
-						twitterResults.push(tweetData);
-						console.log("+ " + tweetData.tweet);						
-					} else {
-						statsTracker.hasMultiline++;
+						statsTracker.hasMultiline++;						
 					}
+
+					statsTracker.accepted++;
+					twitterResults.push(tweetData);
+					console.log("+ " + tweetData.tweet);	
+
+// Ignore multiline matches. Doing this for now, to avoid breaking.
+					// if (isMultiline == false) {
+					// 	statsTracker.accepted++;
+					// 	twitterResults.push(tweetData);
+					// 	console.log("+ " + tweetData.tweet);						
+					// } else {
+					// 	statsTracker.hasMultiline++;
+					// }
 				} else {
 					// console.log('- Length');
 					statsTracker.rejectTracker.length++;
@@ -578,20 +593,67 @@ checkRequirements = function(botData, cb) {
 	var rhymeSets = botData.rhymeSchemeArray,
 		totalRhymeSets = rhymeSets.length;
 
+	console.log(JSON.stringify(rhymeSets));
+
 	if (totalRhymeSets >= 2) {
 
 		// Locate "A Phrases." We need 7.
 		for (var i = 0; i < rhymeSets.length; i++) {
 			if (rhymeSets[i].length >= 7) {
-				botData.aPhrases = rhymeSets[i];
-				botData.aPhrases = _.shuffle(botData.aPhrases);
-				botData.aPhrases = botData.aPhrases.slice(0, 7);
 
-				for (var a = 0; a <botData.aPhrases.length; a++) {
-					botData.aPhrases[a] = botData.aPhrases[a][0];
-					botData.aPhrases[a].tweet = botData.aPhrases[a].tweet.charAt(0).toUpperCase() + botData.aPhrases[a].tweet.slice(1);
+				var totalMultilines = 0,
+					totalRegularLines = 0,
+					totalNeededLines = 7,
+					minRegularLines = 2;
+
+				var allPhrases = [],
+					multilinePhrases = [],
+					regularPhrases = [];
+
+				allPhrases = rhymeSets[i];
+
+				// Determine multi vs regular lines
+				for (var a = 0; a <allPhrases.length; a++) {
+					allPhrases[a] = allPhrases[a][0];
+					allPhrases[a].tweet = allPhrases[a].tweet.charAt(0).toUpperCase() + allPhrases[a].tweet.slice(1);
+
+					if (allPhrases[a].multiline) {
+						totalMultilines++;
+						multilinePhrases.push(allPhrases[a]);
+					} else {
+						totalRegularLines++;
+						regularPhrases.push(allPhrases[a]);
+					}
+				};
+
+				// Do we have enough?
+				if ((totalRegularLines >= minRegularLines) && (totalMultilines >= (totalNeededLines - totalRegularLines))) {
+					regularPhrases = _.shuffle(regularPhrases);
+					multilinePhrases = _.shuffle(multilinePhrases);
+
+					if (totalRegularLines > minRegularLines) {
+						var overflowLines = (totalNeededLines - totalRegularLines) + minRegularLines;
+						var numberOfRegularLines = Math.floor(Math.random() * overflowLines) + 1;
+
+						regularPhrases = regularPhrases.slice(0, numberOfRegularLines);
+					} else {
+						regularPhrases = regularPhrases.slice(0, minRegularLines);
+					};
+
+
+					if (totalMultilines > (totalNeededLines - regularPhrases.length))
+						multilinePhrases = multilinePhrases.slice(0, regularPhrases.length);
 				}
 
+				var combinedPhrases = regularPhrases.concat(multilinePhrases);
+
+				botData.aPhrases[0] = combinedPhrases[0];
+				botData.aPhrases[1] = combinedPhrases[1];
+
+				var remainingPhrases = combinedPhrases.slice(2);
+				remainingPhrases = _.shuffle(remainingPhrases);
+
+				botData.aPhrases = botData.aPhrases.concat(remainingPhrases)
 				botData.aPhrasesQuotaMet = true;
 				rhymeSets.splice(i, 1);
 				break;
@@ -602,12 +664,21 @@ checkRequirements = function(botData, cb) {
 		if (botData.aPhrasesQuotaMet) {
 			for (var j = 0; j < rhymeSets.length; j++) {
 
+				// Remove all multilines
+				var regularPhrases = [];
+
+				for (var z = 0; z < rhymeSets[j].length; z++) {
+					if ((rhymeSets[j].multiline) == false) {
+						regularPhrases.push(rhymeSets[j]);
+					} 
+				};
+
+				rhymeSets[j] = regularPhrases;
+
 				var duplicatesExist = false;
 
 				if (rhymeSets[j].length >= 6) {
 					botData.bPhrases = rhymeSets[j];
-
-					// for (var b = 0; b <botData.bPhrases.length; b++) {
 
 					// Check if any b phrases match a phrases.
 					for (var b = botData.bPhrases.length - 1; b >= 0; b--) {

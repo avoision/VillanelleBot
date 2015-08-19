@@ -11,43 +11,51 @@ A2
 7 a, 6 b
 ---------------------------
 
-A1
-b1
-A2
+A1 		isRegularLine
+b1		isRegularLine
+A2 		isRegularLine
 
-a1
-b2
-A1
+a1 		isMultiline
+b2		isRegularLine
+A1 		isRegularLine
 
-a2
-b3
-A2
+a2 		isMultiline
+b3		isRegularLine
+A2 		isRegularLine
 
-a3
-b4
-A1
+a3 		isMultiline
+b4		isRegularLine
+A1 		isRegularLine
 
-a4
-b5
-A2
+a4  	isMultiline
+b5 		isRegularLine
+A2 		isRegularLine
 
-a5
-b6
-A1
-A2
-
-
-
-1) Get list of random words from Wordnik
-
-2) For each word, get list of all rhyming words.
-Discard any words that begin wtih capital letters.
-If remaining words >= 10, consider word a good candidate and save.
-
-Save word and associated rhyming words.
+a5 		isMultiline
+b6 		isRegularLine
+A1 		isRegularLine
+A2 		isRegularLine
 
 
-3) Search twitter for 
+arrayA requirements
+	isRegularLine = 2 minimum
+
+	Total required is 7
+
+	if there are >= 2 regular lines
+		and also >= 7 - regular lines
+		arrayA is good to go.
+
+arrayB requirements
+	remove all multilines.
+	Do we have at least 6?
+
+
+
+
+
+
+
 
 
 arrayA = [
