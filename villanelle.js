@@ -36,9 +36,9 @@ wordfilter.addWords(['@','#', 'http', 'www']);
 wordfilter.addWords([' ur ', ' u ']);
 
 // Lyrics and annoyingly frequent rhyme words to ignore
-var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied']; 
+var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied', 'rase', 'dase', 'mane', 'mayne', 'guise'];
 
-// Possible additions: rase, dase, ion, mane, mayne, guise
+// Possible additions: ion
 // So many terrible mistakes, due to auto-correct and laziness. I weep for our future.
 
 // Tracking the rejects
@@ -81,13 +81,10 @@ getRandomWords = function(cb) {
     var partsOfSpeech = ["noun", "adjective", "verb"],
     	randomPos = Math.floor(Math.random() * partsOfSpeech.length),
     	randomPartOfSpeech = partsOfSpeech[randomPos];
-    	// randomPartOfSpeech = partsOfSpeech[0];
-
 
     var wordnikRandomOptions = {
     	hasDictionaryDef: "true",
 		includePartOfSpeech: randomPartOfSpeech,
-		// minCorpusCount: "10000",
 		minCorpusCount: "30000",
 		maxCorpusCount: "-1",
 		minDictionaryCount: "3",
@@ -96,11 +93,6 @@ getRandomWords = function(cb) {
 		maxLength: "7",
 		limit: "75",
 		api_key: wordnikKey
-    };
-
-    // If verb, require fewer definitions
-    if (randomPartOfSpeech == "verb") {
-    	wordnikRandomOptions.minDictionaryCount = 4;
     };
 
     var wordnikGetRandomWordsURL = 
@@ -115,7 +107,6 @@ getRandomWords = function(cb) {
 		+ "&maxLength=" + wordnikRandomOptions.maxLength
 		+ "&limit=" + wordnikRandomOptions.limit
 		+ "&api_key=" + wordnikRandomOptions.api_key;
-
 
     var args = {
 		headers: {'Accept':'application/json'}
@@ -134,6 +125,7 @@ getRandomWords = function(cb) {
 cleanRandomWords = function(botData, result, cb) {
 	console.log("========= Clean Random Words =========");	
 	for (var i = result.length - 1; i >= 0; i--) {
+		
 		// If word begins with a capital letter, or contains an apostrophe: remove.
 		if ((result[i].word.charAt(0) == result[i].word.charAt(0).toUpperCase()) 
 			|| (/'/.test(result[i].word))) {
@@ -146,12 +138,9 @@ cleanRandomWords = function(botData, result, cb) {
 	botData.allWords = _.shuffle(botData.allWords);
 	
 	// Reduce number of similarly rhyming words from the set. Compare array elements to one another
-	// and toss out matches based on last three characters. 
+	// and toss out matches based on last four characters. 
 	for (var a = 0; a < botData.allWords.length-1; a++) { // No need to select last item to compare.
-	    firstSuffix = botData.allWords[a].substr(botData.allWords[a].length - 4);
-	    
-	    // if (firstSuffix == "ing") 
-	    // { continue; }; // Allow words with these endings to remain (-ing, -nds, etc).
+	    firstSuffix = botData.allWords[a].substr(botData.allWords[a].length - 4);  
 	    
 	    for (var b = botData.allWords.length - 1; b >= a+1; b--) { // No need to check word against itself.
 	        checkSuffix = botData.allWords[b].substr(botData.allWords[b].length - 4);
@@ -185,8 +174,6 @@ getAllRhymes = function(botData, cb) {
 
 
 findRhymes = function(word, cb) {
-	// console.log("========= Find Rhymes: " + word + " =========");	
-
 	var wordnikRhymeOptions = {
 			useCanonical: "false",
 			relationshipTypes: "rhyme",
@@ -227,29 +214,19 @@ findRhymes = function(word, cb) {
 
 createRhymeLists = function(botData, cb) {
 	console.log("========= Create Rhyme Lists =========");	
-	
-	// console.log('---------------------------');
-	// console.log("botData.allWords");
-	// console.log('---------------------------');
-	// console.log(JSON.stringify(botData.allWords));
 
 	var rhymingWordsArray = [],
 		minWordLength = 3,
 		maxWordLength = 6,
-		maxArrays = 16,
-		minArrays = 2,
-		minDesiredNumberOfRhymes = 30,
+		maxArrays = 5,						// Keep rate limit in mind
+		minArrays = 2,						// maxArrays * maxDesiredNumberOfRhymes = total possible calls
+		minDesiredNumberOfRhymes = 30,		// Must be lower than 450
 		maxDesiredNumberOfRhymes = 50;
 
 	for (var i = 0; i < botData.allWords.length; i++) {
 		rhymingWordsArray[i] = [];
 		rhymingWordsArray[i].push(botData.allWords[i]);
 	}
-
-// console.log('===========================');
-// console.log('rhymingWordsArray');
-// console.log('===========================');
-// console.log(JSON.stringify(rhymingWordsArray));
 
 	for (var j = 0; j < botData.rhymingWordsData.length; j++) {
 		var currentArrayPos = botData.rhymingWordsData[j];
@@ -279,11 +256,6 @@ createRhymeLists = function(botData, cb) {
 			}
 		}
 	}
-
-// console.log('===========================');
-// console.log('Before Cleanup: rhymingWordsArray');
-// console.log('===========================');
-// console.log(JSON.stringify(rhymingWordsArray));
 	
 	// Cycle through array, remove anything with less than desired number of rhymes.
 	for (var x = rhymingWordsArray.length - 1; x >= 0; x--) {
@@ -302,15 +274,6 @@ createRhymeLists = function(botData, cb) {
 			rhymingWordsArray[x] = rhymingWordsArray[x].slice(0, maxDesiredNumberOfRhymes);
 		}
 	}
-
-// console.log('===========================');
-// console.log('AfterCleanup: rhymingWordsArray');
-// console.log('===========================');
-// console.log(JSON.stringify(rhymingWordsArray));
-
-
-	// Avoid hitting rate limit in a single call. Must be lower than 450 (22 arrays with 20 items each)
-maxArrays = 5;	// TESTING ONLY - REMOVE THIS!
 
 	if (rhymingWordsArray.length > maxArrays) {
 		rhymingWordsArray = _.shuffle(rhymingWordsArray);
@@ -357,9 +320,7 @@ getAllPublicTweets = function(botData, cb) {
 }
 
 
-
 getTweetsByWord = function(word, cb) {
-	// word = word + "%20-RT%20-%40%20-http";
 	var suffix = "%20-RT%20-%40%20-http";
 	
 	console.log('--------- ' + word + ' ---------');
@@ -374,7 +335,6 @@ getTweetsByWord = function(word, cb) {
 				statsTracker.total++;
 
 				var tweetAsIs = data.statuses[i].text;
-				// console.log(tweetAsIs);
 
 				// Remove tweets with excessive uppercase
 				if (/[A-Z]{2}/.test(tweetAsIs)) {
@@ -522,7 +482,6 @@ getTweetsByWord = function(word, cb) {
 						url: "http://twitter.com/" + currentUserScreenName + "/status/" + currentTweetID
 					};
 
-
 					if (isMultiline) {
 						statsTracker.hasMultiline++;						
 					}
@@ -643,20 +602,6 @@ checkRequirements = function(botData, cb) {
 				if ((totalRegularLines >= minRegularLines) && (totalMultilines >= (totalNeededLines - totalRegularLines))) {
 					regularPhrases = _.shuffle(regularPhrases);
 					multilinePhrases = _.shuffle(multilinePhrases);
-
-					// if (totalRegularLines > minRegularLines) {
-					// 	var overflowLines = (totalNeededLines - totalRegularLines) + minRegularLines;
-					// 	var numberOfRegularLines = Math.floor(Math.random() * overflowLines) + 1;
-
-					// 	regularPhrases = regularPhrases.slice(0, numberOfRegularLines);
-					// } else {
-					// 	regularPhrases = regularPhrases.slice(0, minRegularLines);
-					// };
-
-
-					// if (totalMultilines > (totalNeededLines - regularPhrases.length)) {
-					// 	multilinePhrases = multilinePhrases.slice(0, regularPhrases.length);
-					// }
 
 					var combinedPhrases = regularPhrases.concat(multilinePhrases);
 
@@ -813,6 +758,7 @@ formatPoem = function(botData, cb) {
 	poemBody[1] = "<a href=\"" + b1.url + "\">" + b1.tweet + "</a><br />";
 	poemBody[2] = "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>";
 
+	// Not terribly DRY here.
 	if (a1.multiline) {
 		poemBody[3] = "<p class=\"tercet\"><a href=\"" + a1.url + "\">" + a1.tweetPrefix + "<br />"
 		poemBody[4] = a1.tweetSuffix + "</a><a href=\"" + b2.url + "\">" + b2.tweet + "</a><br />"
