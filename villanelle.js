@@ -372,16 +372,18 @@ getTweetsByWord = function(word, cb) {
 					continue;
 				}
 
-
-// Begin checking here for end word or "last five words."
-
 				// Remove punctuation
 				var ritaTweet = currentTweet.replace(/[?.,-\/#!$%\^&\*;:{}=\-_`~()]/g,""),
 					ritaTweetWordsArray = ritaTweet.split(" ");
 				
 				var slangFound = 0,
-					maxSlangAllowed = 0,	// 1 or more limit seems fine. 0 seems to decrease success.
+					maxSlangAllowed = 0,
 					hasSlang = false;
+
+
+// Consider applying text length check first.
+// Then ensure that word exists within 25% of total tweet length;
+
 
 				var wordPos = ritaTweetWordsArray.lastIndexOf(word), 
 					maxDistanceUntilEnd = 4,
@@ -658,7 +660,6 @@ checkRequirements = function(botData, cb) {
 				// console.log(JSON.stringify(regularPhrases));
 				// console.log('+++++++++++++++++++++++++++');
 
-				regularPhrases = _.sortBy(regularPhrases, 'tweetLength');
 				rhymeSets[j] = regularPhrases;
 
 				var duplicatesExist = false;
@@ -683,12 +684,15 @@ checkRequirements = function(botData, cb) {
 						}
 					}
 
+					botData.bPhrases = _.sortBy(botData.bPhrases, 'tweetLength');
+
 					if (botData.bPhrases.length >= 6) {					
-						botData.bPhrases = _.shuffle(botData.bPhrases);
+						// botData.bPhrases = _.shuffle(botData.bPhrases);
 						botData.bPhrases = botData.bPhrases.slice(0, 6);
-						botData.bPhrasesQuotaMet = true;
-						break;
 					};
+
+					botData.bPhrasesQuotaMet = true;
+					break;					
 				}
 			}
 
