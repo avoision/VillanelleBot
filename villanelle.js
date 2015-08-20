@@ -420,7 +420,7 @@ getTweetsByWord = function(word, cb) {
 					ritaTweetWordsArray = ritaTweet.split(" ");
 				
 				var slangFound = 0,
-					maxSlangAllowed = 1,	// 1 or more limit seems fine. 0 seems to decrease success.
+					maxSlangAllowed = 0,	// 1 or more limit seems fine. 0 seems to decrease success.
 					hasSlang = false;
 
 				var wordPos = ritaTweetWordsArray.lastIndexOf(word) + 1, 
@@ -609,6 +609,8 @@ checkRequirements = function(botData, cb) {
 		for (var i = 0; i < rhymeSets.length; i++) {
 			if (rhymeSets[i].length >= 7) {
 
+				rhymeSets[i] = _.uniq(rhymeSets[i]);
+
 				var totalMultilines = 0,
 					totalRegularLines = 0,
 					totalNeededLines = 7,
@@ -677,6 +679,7 @@ checkRequirements = function(botData, cb) {
 		// Local "B Phrases." We need 6.
 		if (botData.aPhrasesQuotaMet) {
 			for (var j = 0; j < rhymeSets.length; j++) {
+				rhymeSets[j] = _.uniq(rhymeSets[j]);
 
 				// Remove all multilines
 				var allPhrases = [],
