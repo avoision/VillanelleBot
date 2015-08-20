@@ -94,3 +94,27 @@ var villanelle =
 	+ "<a href=\"" + A1.url + "\">" + A1.tweet + "</a><br />"
 	+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
 
+
+---------------------------
+Why are these showing as multiline false?
+---------------------------
+
+{
+    "tweet": "Proper feel shit and fed up",
+    "tweetID": "634378249263562752",
+    "multiline": false,
+    "tweetPrefix": "",
+    "tweetSuffix": "",
+    "userID": "410159498",
+    "userScreenName": "evejenkinson",
+    "url": "http://twitter.com/evejenkinson/status/634378249263562752"
+}, {
+    "tweet": "Peel, strip, shred, scrap",
+    "tweetID": "634352739535863808",
+    "multiline": false,
+    "tweetPrefix": "",
+    "tweetSuffix": "",
+    "userID": "2450277709",
+    "userScreenName": "synonymywords",
+    "url": "http://twitter.com/synonymywords/status/634352739535863808"
+}

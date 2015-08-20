@@ -1,4 +1,4 @@
-var _             = require('lodash');
+var _             = require('underscore');
 var Client        = require('node-rest-client').Client;
 var Twit          = require('twit');
 var async         = require('async');
@@ -383,7 +383,7 @@ getTweetsByWord = function(word, cb) {
 					maxSlangAllowed = 0,	// 1 or more limit seems fine. 0 seems to decrease success.
 					hasSlang = false;
 
-				var wordPos = ritaTweetWordsArray.lastIndexOf(word) + 1, 
+				var wordPos = ritaTweetWordsArray.lastIndexOf(word), 
 					maxDistanceUntilEnd = 4,
 					isMultiline = false;
 
@@ -474,6 +474,7 @@ getTweetsByWord = function(word, cb) {
 					var tweetData = {
 						tweet: data.statuses[i].text,
 						tweetID: currentTweetID,
+						tweetLength: currentTweet.length,
 						multiline: isMultiline,
 						tweetPrefix: prefix,
 						tweetSuffix: suffix,
@@ -488,7 +489,16 @@ getTweetsByWord = function(word, cb) {
 
 					statsTracker.accepted++;
 					twitterResults.push(tweetData);
-					console.log("+ " + tweetData.tweet);	
+
+					if (isMultiline) {
+						console.log('M ' + tweetData.tweet);
+						console.log('   Prefix: ' + prefix);
+						console.log('   Suffix: ' + suffix);
+					} else {
+						console.log("+ " + tweetData.tweet);
+					}
+					
+
 
 				} else {
 					// console.log('- Length');
@@ -648,6 +658,7 @@ checkRequirements = function(botData, cb) {
 				// console.log(JSON.stringify(regularPhrases));
 				// console.log('+++++++++++++++++++++++++++');
 
+				regularPhrases = _.sortBy(regularPhrases, 'tweetLength');
 				rhymeSets[j] = regularPhrases;
 
 				var duplicatesExist = false;
