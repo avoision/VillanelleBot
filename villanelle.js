@@ -361,10 +361,8 @@ getAllPublicTweets = function(botData, cb) {
 getTweetsByWord = function(word, cb) {
 	// word = word + "%20-RT%20-%40%20-http";
 	var suffix = "%20-RT%20-%40%20-http";
-
-	console.log('+++++++++++++++++++++++++++');
-	console.log(word);
-	console.log('+++++++++++++++++++++++++++');
+	
+	console.log('--------- ' + word + ' ---------');
 
     t.get('search/tweets', {q: word + suffix, count: 100, result_type: 'recent', lang: 'en', include_entities: 'false'}, function(err, data, response) {
 		if (!err) {
@@ -416,13 +414,6 @@ getTweetsByWord = function(word, cb) {
 
 
 // Begin checking here for end word or "last five words."
-
-				// Checking if word is at the end of a sentence.
-				// var regex = new RegExp(word + "[ ,?!.]+$");
-				// if (regex.test(currentTweet) == false) {
-				// 	statsTracker.rejectTracker.notEndWord++;
-				// 	continue;
-				// }
 
 				// Remove punctuation
 				var ritaTweet = currentTweet.replace(/[?.,-\/#!$%\^&\*;:{}=\-_`~()]/g,""),
@@ -546,8 +537,6 @@ getTweetsByWord = function(word, cb) {
 				}
 			}
 
-
-
 			// Do we have more than one example with this word? 
 			// If so, randomize and reduce to one.
 			if (twitterResults.length > 1) {
@@ -556,7 +545,6 @@ getTweetsByWord = function(word, cb) {
 
 			twitterResults = twitterResults.slice(0, 1);
 
-			// console.log("+++++++++");
 			cb(null, twitterResults);
 		} else {
 			console.log(err);
@@ -646,24 +634,27 @@ checkRequirements = function(botData, cb) {
 					}
 				};
 
+				// console.log('regularPhrases: ' + JSON.stringify(regularPhrases));
+				// console.log('multilinePhrases: ' + JSON.stringify(multilinePhrases));
+
 				// Do we have enough?
 				if ((totalRegularLines >= minRegularLines) && (totalMultilines >= (totalNeededLines - totalRegularLines))) {
 					regularPhrases = _.shuffle(regularPhrases);
 					multilinePhrases = _.shuffle(multilinePhrases);
 
-					if (totalRegularLines > minRegularLines) {
-						var overflowLines = (totalNeededLines - totalRegularLines) + minRegularLines;
-						var numberOfRegularLines = Math.floor(Math.random() * overflowLines) + 1;
+					// if (totalRegularLines > minRegularLines) {
+					// 	var overflowLines = (totalNeededLines - totalRegularLines) + minRegularLines;
+					// 	var numberOfRegularLines = Math.floor(Math.random() * overflowLines) + 1;
 
-						regularPhrases = regularPhrases.slice(0, numberOfRegularLines);
-					} else {
-						regularPhrases = regularPhrases.slice(0, minRegularLines);
-					};
+					// 	regularPhrases = regularPhrases.slice(0, numberOfRegularLines);
+					// } else {
+					// 	regularPhrases = regularPhrases.slice(0, minRegularLines);
+					// };
 
 
-					if (totalMultilines > (totalNeededLines - regularPhrases.length)) {
-						multilinePhrases = multilinePhrases.slice(0, regularPhrases.length);
-					}
+					// if (totalMultilines > (totalNeededLines - regularPhrases.length)) {
+					// 	multilinePhrases = multilinePhrases.slice(0, regularPhrases.length);
+					// }
 
 					var combinedPhrases = regularPhrases.concat(multilinePhrases);
 
@@ -673,7 +664,9 @@ checkRequirements = function(botData, cb) {
 					var remainingPhrases = combinedPhrases.slice(2);
 					remainingPhrases = _.shuffle(remainingPhrases);
 
-					botData.aPhrases = botData.aPhrases.concat(remainingPhrases)
+					botData.aPhrases = botData.aPhrases.concat(remainingPhrases);
+					botData.aPhrases = botData.aPhrases.slice(0, 7);
+
 					botData.aPhrasesQuotaMet = true;
 					rhymeSets.splice(i, 1);
 					break;
@@ -788,11 +781,12 @@ formatPoem = function(botData, cb) {
 		return theTitle;
 	}
 
-
+	// Determine each line
 	var A1, A2, 
 		a1, a2, a3, a4, a5,
 		b1, b2, b3, b4, b5, b6;
 	
+	// Assign
 	A1 = botData.aPhrases[0];
 	A2 = botData.aPhrases[1];
 
@@ -810,34 +804,62 @@ formatPoem = function(botData, cb) {
 	b6 = botData.bPhrases[5];
 
 	var poemTitle = getTitle();
+	var poemBody = [];
 
-	var villanelle =
-		"<p class=\"tercet\"><a href=\"" + A1.url + "\">" + A1.tweet + "</a><br />"
-		+ "<a href=\"" + b1.url + "\">" + b1.tweet + "</a><br />"
-		+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
+	poemBody[0] = "<p class=\"tercet\"><a href=\"" + A1.url + "\">" + A1.tweet + "</a><br />";
+	poemBody[1] = "<a href=\"" + b1.url + "\">" + b1.tweet + "</a><br />";
+	poemBody[2] = "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>";
 
-		+ "<p class=\"tercet\"><a href=\"" + a1.url + "\">" + a1.tweet + "</a><br />"
-		+ "<a href=\"" + b2.url + "\">" + b2.tweet + "</a><br />"
-		+ "<a href=\"" + A1.url + "\">" + A1.tweet + "</a></p>"
+	if (a1.multiline) {
+		poemBody[3] = "<p class=\"tercet\"><a href=\"" + a1.url + "\">" + a1.tweetPrefix + "<br />"
+		poemBody[4] = a1.tweetSuffix + "</a><a href=\"" + b2.url + "\">" + b2.tweet + "</a><br />"
+	} else {
+		poemBody[3] = "<p class=\"tercet\"><a href=\"" + a1.url + "\">" + a1.tweet + "</a><br />"
+		poemBody[4] = "<a href=\"" + b2.url + "\">" + b2.tweet + "</a><br />"
+	};
+	poemBody[5] = "<a href=\"" + A1.url + "\">" + A1.tweet + "</a></p>";
 
-		+ "<p class=\"tercet\"><a href=\"" + a2.url + "\">" + a2.tweet + "</a><br />"
-		+ "<a href=\"" + b3.url + "\">" + b3.tweet + "</a><br />"
-		+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
+	if (a2.multiline) {
+		poemBody[6] = "<p class=\"tercet\"><a href=\"" + a2.url + "\">" + a2.tweetPrefix + "<br />"
+		poemBody[7] = a2.tweetSuffix + "</a><a href=\"" + b3.url + "\">" + b3.tweet + "</a><br />"
+	} else {
+		poemBody[6] = "<p class=\"tercet\"><a href=\"" + a2.url + "\">" + a2.tweet + "</a><br />"
+		poemBody[7] = "<a href=\"" + b3.url + "\">" + b3.tweet + "</a><br />"
+	};
+	poemBody[8] = "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>";
 
-		+ "<p class=\"tercet\"><a href=\"" + a3.url + "\">" + a3.tweet + "</a><br />"
-		+ "<a href=\"" + b4.url + "\">" + b4.tweet + "</a><br />"
-		+ "<a href=\"" + A1.url + "\">" + A1.tweet + "</a></p>"
+	if (a3.multiline) {
+		poemBody[9] = "<p class=\"tercet\"><a href=\"" + a3.url + "\">" + a3.tweetPrefix + "<br />"
+		poemBody[10] = a3.tweetSuffix + "</a><a href=\"" + b4.url + "\">" + b4.tweet + "</a><br />"
+	} else {
+		poemBody[9] = "<p class=\"tercet\"><a href=\"" + a3.url + "\">" + a3.tweet + "</a><br />"
+		poemBody[10] = "<a href=\"" + b4.url + "\">" + b4.tweet + "</a><br />"
+	};
+	poemBody[11] = "<a href=\"" + A1.url + "\">" + A1.tweet + "</a></p>";
 
-		+ "<p class=\"tercet\"><a href=\"" + a4.url + "\">" + a4.tweet + "</a><br />"
-		+ "<a href=\"" + b5.url + "\">" + b5.tweet + "</a><br />"
-		+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
+	if (a4.multiline) {
+		poemBody[12] = "<p class=\"tercet\"><a href=\"" + a4.url + "\">" + a4.tweetPrefix + "<br />"
+		poemBody[13] = a4.tweetSuffix + "</a><a href=\"" + b5.url + "\">" + b5.tweet + "</a><br />"
+	} else {
+		poemBody[12] = "<p class=\"tercet\"><a href=\"" + a4.url + "\">" + a4.tweet + "</a><br />"
+		poemBody[13] = "<a href=\"" + b5.url + "\">" + b5.tweet + "</a><br />"
+	};
+	poemBody[14] = "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>";
 
-		+ "<p class=\"quatrain\"><a href=\"" + a5.url + "\">" + a5.tweet + "</a><br />"
-		+ "<a href=\"" + b6.url + "\">" + b6.tweet + "</a><br />"
-		+ "<a href=\"" + A1.url + "\">" + A1.tweet + "</a><br />"
-		+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
+	if (a5.multiline) {
+		poemBody[15] = "<p class=\"tercet\"><a href=\"" + a5.url + "\">" + a5.tweetPrefix + "<br />"
+		poemBody[16] = a5.tweetSuffix + "</a><a href=\"" + b6.url + "\">" + b6.tweet + "</a><br />"
+	} else {
+		poemBody[15] = "<p class=\"tercet\"><a href=\"" + a5.url + "\">" + a5.tweet + "</a><br />"
+		poemBody[16] = "<a href=\"" + b6.url + "\">" + b6.tweet + "</a><br />"
+	};
+	poemBody[17] = "<a href=\"" + A1.url + "\">" + A1.tweet + "</a><br />";
+	poemBody[18] = "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>";
 
-		+ "<p class=\"credits\">This <a href=\"https://en.wikipedia.org/wiki/Villanelle\">villanelle</a> was made with tweets by: " 
+
+	poemBody = poemBody.join('');
+
+	var credits = "<p class=\"credits\">This <a href=\"https://en.wikipedia.org/wiki/Villanelle\">villanelle</a> was made with tweets by: " 
 			+ "<a href=\"" + A1.url + "\">@" + A1.userScreenName + "</a>, "
 			+ "<a href=\"" + A2.url + "\">@" + A2.userScreenName + "</a>, "
 			+ "<a href=\"" + a1.url + "\">@" + a1.userScreenName + "</a>, "
@@ -854,6 +876,9 @@ formatPoem = function(botData, cb) {
 			+ "</p>"
 
 		+ "<p class=\"attribution\">Coding: <a href=\"http://twitter.com/avoision\">@avoision</a></p>";
+
+
+	var villanelle = poemBody + credits;
 
 	cb(null, botData, poemTitle, villanelle);
 }

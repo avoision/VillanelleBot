@@ -145,5 +145,29 @@ botData.aPhrases = [
 
 
 
+var villanelle =
+	"<p class=\"tercet\"><a href=\"" + A1.url + "\">" + A1.display + "</a><br />"
+	+ "<a href=\"" + b1.url + "\">" + b1.tweet + "</a><br />"
+	+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
 
+	+ "<p class=\"tercet\"><a href=\"" + a1.url + "\">" + a1.tweet + "</a><br />"
+	+ "<a href=\"" + b2.url + "\">" + b2.tweet + "</a><br />"
+	+ "<a href=\"" + A1.url + "\">" + A1.tweet + "</a></p>"
+
+	+ "<p class=\"tercet\"><a href=\"" + a2.url + "\">" + a2.tweet + "</a><br />"
+	+ "<a href=\"" + b3.url + "\">" + b3.tweet + "</a><br />"
+	+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
+
+	+ "<p class=\"tercet\"><a href=\"" + a3.url + "\">" + a3.tweet + "</a><br />"
+	+ "<a href=\"" + b4.url + "\">" + b4.tweet + "</a><br />"
+	+ "<a href=\"" + A1.url + "\">" + A1.tweet + "</a></p>"
+
+	+ "<p class=\"tercet\"><a href=\"" + a4.url + "\">" + a4.tweet + "</a><br />"
+	+ "<a href=\"" + b5.url + "\">" + b5.tweet + "</a><br />"
+	+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
+
+	+ "<p class=\"quatrain\"><a href=\"" + a5.url + "\">" + a5.tweet + "</a><br />"
+	+ "<a href=\"" + b6.url + "\">" + b6.tweet + "</a><br />"
+	+ "<a href=\"" + A1.url + "\">" + A1.tweet + "</a><br />"
+	+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
 
