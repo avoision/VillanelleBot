@@ -337,12 +337,18 @@ getTweetsByWord = function(word, cb) {
 				statsTracker.total++;
 
 				data.statuses[i].text = data.statuses[i].text.trim();
+
+				// I hate to mess with the original tweet. But done out of necessity.
+				if (/[a-z]$/.test(data.statuses[i].text)) {
+					data.statuses[i].text += ".";
+				}
+
 				var tweetAsIs = data.statuses[i].text;
 
-				if (!/[?!.]$/.test(tweetAsIs)) {
-					statsTracker.rejectTracker.noPunctuationAtEnd++;
-					continue;
-				}
+				// if (!/[?!.]$/.test(tweetAsIs)) {
+				// 	statsTracker.rejectTracker.noPunctuationAtEnd++;
+				// 	continue;
+				// }
 
 				// Remove tweets with excessive uppercase
 				if (/[A-Z]{2}/.test(tweetAsIs)) {
@@ -385,12 +391,12 @@ getTweetsByWord = function(word, cb) {
 				// Multi Range: 50 - 70
 				// Regular Range: 35 - 50
 
-				var tweetLengthMin = 40,
-					tweetLengthMax = 60,
-					tweetMultiLengthMin = 45,
-					tweetMultiLengthMax = 60
-					tweetRegularLengthMin = 40
-					tweetRegularLengthMax = 60;
+				var tweetLengthMin = 50,
+					tweetLengthMax = 70,
+					tweetMultiLengthMin = 50,
+					tweetMultiLengthMax = 70
+					tweetRegularLengthMin = 35
+					tweetRegularLengthMax = 50;
 
 
 				if ((currentTweet.length <= tweetLengthMax) && (currentTweet.length >= tweetLengthMin)) {
@@ -588,6 +594,7 @@ checkRequirements = function(botData, cb) {
 	var rhymeSets = botData.rhymeSchemeArray,
 		totalRhymeSets = rhymeSets.length;
 
+	console.log('---');
 	console.log(JSON.stringify(rhymeSets));
 
 	if (totalRhymeSets >= 2) {
@@ -649,6 +656,16 @@ checkRequirements = function(botData, cb) {
 			}
 		}
 
+// Determine number of multilines in arrayA
+// First two are regular. That means check 3 - 7 
+// multi, regular, regular, multi etc...
+
+// Then when constructing bArray
+// Go through one time, and for every multi - grab from top.
+// Then shuffle remaining, and populate with remaining.
+
+
+
 		// Local "B Phrases." We need 6.
 		if (botData.aPhrasesQuotaMet) {
 			for (var j = 0; j < rhymeSets.length; j++) {
@@ -665,7 +682,7 @@ checkRequirements = function(botData, cb) {
 
 				for (var z = 0; z < allPhrases.length; z++) {
 					// console.log("z: " + z);
-					// console.log('allPhrases[z]: ' + JSON.stringify(allPhrases[z]));
+					console.log('allPhrases[z][0]: ' + JSON.stringify(allPhrases[z][0]));
 
 					if ((allPhrases[z][0].multiline) == false) {
 						regularPhrases.push(allPhrases[z]);
