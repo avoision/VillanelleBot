@@ -338,10 +338,11 @@ getTweetsByWord = function(word, cb) {
 				data.statuses[i].text = data.statuses[i].text.trim();
 				var tweetAsIs = data.statuses[i].text;
 
-				if (!/[,?!.;-]$/.test(tweetAsIs)) {
-					console.log("-P$: " + tweetAsIs);
+				if (!/[?!.]$/.test(tweetAsIs)) {
 					statsTracker.rejectTracker.noPunctuationAtEnd++;
 					continue;
+				} else {
+					console.log("* " + tweetAsIs);
 				}
 
 				// Remove tweets with excessive uppercase
@@ -431,15 +432,15 @@ getTweetsByWord = function(word, cb) {
 
 						// Do some checking here, to determine if last character in suffix is appropriate punctuation.
 						// If not, skip
-// 						if (/[?!.]/.test(suffix.charAt(suffix.length-1))) {
-// 							suffix += " ";
+						if (/[?!.]/.test(suffix.charAt(suffix.length-1))) {
+							suffix += " ";
 
-// 						} else {
-// // Add period and keep?
-// 							// console.log("Rejected, no punctuation: " + suffix);
-// 							statsTracker.rejectTracker.notNearEnd++;
-// 							continue;
-// 						}
+						} else {
+// Add period and keep?
+							// console.log("Rejected, no punctuation: " + suffix);
+							statsTracker.rejectTracker.notNearEnd++;
+							continue;
+						}
 					} else {
 						isMultiline = false;
 						var prefix = '',
