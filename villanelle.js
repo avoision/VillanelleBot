@@ -54,6 +54,7 @@ var statsTracker = {
 		notNearEnd: 0,
 		excessivePunctuation: 0,
 		noPunctuationAtEnd: 0,
+		punctuationMisMatchAtEnd: 0,
 		slang: 0,
 		upper: 0
 	}
@@ -341,8 +342,6 @@ getTweetsByWord = function(word, cb) {
 				if (!/[?!.]$/.test(tweetAsIs)) {
 					statsTracker.rejectTracker.noPunctuationAtEnd++;
 					continue;
-				} else {
-					console.log("* " + tweetAsIs);
 				}
 
 				// Remove tweets with excessive uppercase
@@ -386,12 +385,12 @@ getTweetsByWord = function(word, cb) {
 				// Multi Range: 50 - 70
 				// Regular Range: 35 - 50
 
-				var tweetLengthMin = 35,
+				var tweetLengthMin = 40,
 					tweetLengthMax = 60,
 					tweetMultiLengthMin = 45,
 					tweetMultiLengthMax = 60
-					tweetRegularLengthMin = 35
-					tweetRegularLengthMax = 50;
+					tweetRegularLengthMin = 40
+					tweetRegularLengthMax = 60;
 
 
 				if ((currentTweet.length <= tweetLengthMax) && (currentTweet.length >= tweetLengthMin)) {
@@ -437,8 +436,11 @@ getTweetsByWord = function(word, cb) {
 
 						} else {
 // Add period and keep?
-							// console.log("Rejected, no punctuation: " + suffix);
-							statsTracker.rejectTracker.notNearEnd++;
+							console.log("- punctuationMisMatchAtEnd: " + suffix);
+								console.log('   ' + currentTweet + " (" + currentTweet.length + ")");
+								console.log('   Prefix: ' + prefix);
+								console.log('   Suffix: ' + suffix);
+							statsTracker.rejectTracker.punctuationMisMatchAtEnd++;
 							continue;
 						}
 					} else {
@@ -447,6 +449,10 @@ getTweetsByWord = function(word, cb) {
 							suffix = '';
 					};
 				} else {
+					console.log("- notNearEnd: ");
+						console.log('   ' + currentTweet + " (" + currentTweet.length + ")");
+						console.log('   Prefix: ' + prefix);
+						console.log('   Suffix: ' + suffix);
 					statsTracker.rejectTracker.notNearEnd++;
 					continue;
 				}
@@ -581,6 +587,8 @@ gatherAndCleanPhrases = function(botData, cb) {
 checkRequirements = function(botData, cb) {
 	var rhymeSets = botData.rhymeSchemeArray,
 		totalRhymeSets = rhymeSets.length;
+
+	console.log(JSON.stringify(rhymeSets));
 
 	if (totalRhymeSets >= 2) {
 
