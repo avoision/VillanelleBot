@@ -96,25 +96,18 @@ var villanelle =
 
 
 ---------------------------
-Why are these showing as multiline false?
+Investigate these occurrences
 ---------------------------
 
-{
-    "tweet": "Proper feel shit and fed up",
-    "tweetID": "634378249263562752",
-    "multiline": false,
-    "tweetPrefix": "",
-    "tweetSuffix": "",
-    "userID": "410159498",
-    "userScreenName": "evejenkinson",
-    "url": "http://twitter.com/evejenkinson/status/634378249263562752"
-}, {
-    "tweet": "Peel, strip, shred, scrap",
-    "tweetID": "634352739535863808",
-    "multiline": false,
-    "tweetPrefix": "",
-    "tweetSuffix": "",
-    "userID": "2450277709",
-    "userScreenName": "synonymywords",
-    "url": "http://twitter.com/synonymywords/status/634352739535863808"
-}
+My notes on my phone will have you in tears . (45)
+Prefix: My notes on my phone will have you in tears
+Suffix: .
+
+---
+
+
+
+
+
+
+

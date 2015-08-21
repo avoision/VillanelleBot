@@ -52,7 +52,8 @@ var statsTracker = {
 		hasNumber: 0,
 		length: 0,
 		notNearEnd: 0,
-		punctuation: 0,
+		excessivePunctuation: 0,
+		noPunctuationAtEnd: 0,
 		slang: 0,
 		upper: 0
 	}
@@ -334,7 +335,14 @@ getTweetsByWord = function(word, cb) {
 			for (var i = 0; i < data.statuses.length; i++) {
 				statsTracker.total++;
 
+				data.statuses[i].text = data.statuses[i].text.trim();
 				var tweetAsIs = data.statuses[i].text;
+
+				if (!/[,?!.;-]$/.test(tweetAsIs)) {
+					console.log("-P$: " + tweetAsIs);
+					statsTracker.rejectTracker.noPunctuationAtEnd++;
+					continue;
+				}
 
 				// Remove tweets with excessive uppercase
 				if (/[A-Z]{2}/.test(tweetAsIs)) {
@@ -368,7 +376,26 @@ getTweetsByWord = function(word, cb) {
 
 				// Do we have ellipses or ?! or other excessive punctuation? Reject.
 				if (/[,?!.]{2}/.test(currentTweet)) {
-					statsTracker.rejectTracker.punctuation++;
+					statsTracker.rejectTracker.excessivePunctuation++;
+					continue;
+				}
+
+				// Keep within preferred character length
+				// Full Range: 35 - 70
+				// Multi Range: 50 - 70
+				// Regular Range: 35 - 50
+
+				var tweetLengthMin = 35,
+					tweetLengthMax = 60,
+					tweetMultiLengthMin = 45,
+					tweetMultiLengthMax = 60
+					tweetRegularLengthMin = 35
+					tweetRegularLengthMax = 50;
+
+
+				if ((currentTweet.length <= tweetLengthMax) && (currentTweet.length >= tweetLengthMin)) {
+				} else {
+					statsTracker.rejectTracker.length++;
 					continue;
 				}
 
@@ -379,11 +406,6 @@ getTweetsByWord = function(word, cb) {
 				var slangFound = 0,
 					maxSlangAllowed = 0,
 					hasSlang = false;
-
-
-// Consider applying text length check first.
-// Then ensure that word exists within 25% of total tweet length;
-
 
 				var wordPos = ritaTweetWordsArray.lastIndexOf(word), 
 					maxDistanceUntilEnd = 4,
@@ -407,34 +429,17 @@ getTweetsByWord = function(word, cb) {
 							// console.log('prefix: ' + prefix);
 							// console.log('suffix: ' + suffix);
 
-// Make sure prefix/suffix is working properly.
-// Add check to catch spaces, punctuation after word. Move from suffix to prefix.
-
-// word: shrine
-// currentTweet: our pari in the shrine was a papi.
-// prefix: Our p
-// suffix: ari in the Shrine was a papi.
-
-// currentTweet: everybody won't make it.
-// prefix: Everybody won
-// suffix: 't make it.
-
-						// Do some checking here, to determine if last character in suffix is punctuation.
+						// Do some checking here, to determine if last character in suffix is appropriate punctuation.
 						// If not, skip
-						if (/[,?!.]/.test(suffix.charAt(suffix.length-1))) {
-							suffix += " ";
+// 						if (/[?!.]/.test(suffix.charAt(suffix.length-1))) {
+// 							suffix += " ";
 
-
-
-
-
-
-						} else {
-// Add period and keep?
-							// console.log("Rejected, no punctuation: " + suffix);
-							statsTracker.rejectTracker.notNearEnd++;
-							continue;
-						}
+// 						} else {
+// // Add period and keep?
+// 							// console.log("Rejected, no punctuation: " + suffix);
+// 							statsTracker.rejectTracker.notNearEnd++;
+// 							continue;
+// 						}
 					} else {
 						isMultiline = false;
 						var prefix = '',
@@ -444,8 +449,6 @@ getTweetsByWord = function(word, cb) {
 					statsTracker.rejectTracker.notNearEnd++;
 					continue;
 				}
-
-
 
 				// Check lexicon for words, mark all else as slang
 				for (var p = 0; p < ritaTweetWordsArray.length; p++) {
@@ -467,44 +470,48 @@ getTweetsByWord = function(word, cb) {
 				};
 
 
-// Revisit character length logic. Set Prefix/Suffix to 0, and use subtraction for one formula?
-// Or, set tweetData first, then check for length requirements.
+				var multiRegularLengthCheck = false;
 
-				// Keep under 50 characters in length;
-				if ((currentTweet.length <= 50) && (currentTweet.length >= 25)) {
+				// If multi, range needs to be 50 - 70
+				// If regular, range needs to be < 50 > 35.
+				// Ensure that word exists within 25% of total tweet length;
+				if ((isMultiline) 
+					&& (currentTweet.length >= tweetMultiLengthMin) 
+					&& (currentTweet.length <= tweetMultiLengthMax)) {
+						multiRegularLengthCheck = true;
+						statsTracker.hasMultiline++;
+				} else if ((isMultiline == false)
+					&& (currentTweet.length >= tweetRegularLengthMin) 
+					&& (currentTweet.length <= tweetRegularLengthMax)) {
+						multiRegularLengthCheck = true;
+				};
 
-					var tweetData = {
-						tweet: data.statuses[i].text,
-						tweetID: currentTweetID,
-						tweetLength: currentTweet.length,
-						multiline: isMultiline,
-						tweetPrefix: prefix,
-						tweetSuffix: suffix,
-						userID: currentUserID,
-						userScreenName: currentUserScreenName,
-						url: "http://twitter.com/" + currentUserScreenName + "/status/" + currentTweetID
-					};
-
-					if (isMultiline) {
-						statsTracker.hasMultiline++;						
-					}
-
-					statsTracker.accepted++;
-					twitterResults.push(tweetData);
-
-					if (isMultiline) {
-						console.log('M ' + tweetData.tweet);
-						console.log('   Prefix: ' + prefix);
-						console.log('   Suffix: ' + suffix);
-					} else {
-						console.log("+ " + tweetData.tweet);
-					}
-					
-
-
-				} else {
-					// console.log('- Length');
+				if (multiRegularLengthCheck == false) {
 					statsTracker.rejectTracker.length++;
+					continue;
+				}
+
+				var tweetData = {
+					tweet: data.statuses[i].text,
+					tweetID: currentTweetID,
+					tweetLength: currentTweet.length,
+					multiline: isMultiline,
+					tweetPrefix: prefix,
+					tweetSuffix: suffix,
+					userID: currentUserID,
+					userScreenName: currentUserScreenName,
+					url: "http://twitter.com/" + currentUserScreenName + "/status/" + currentTweetID
+				};
+
+				statsTracker.accepted++;
+				twitterResults.push(tweetData);
+
+				if (isMultiline) {
+					console.log('M ' + tweetData.tweet + " (" + currentTweet.length + ")");
+					console.log('   Prefix: ' + prefix);
+					console.log('   Suffix: ' + suffix);
+				} else {
+					console.log("+ " + tweetData.tweet + " (" + currentTweet.length + ")");
 				}
 			}
 
