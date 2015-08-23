@@ -36,7 +36,7 @@ wordfilter.addWords(['@','#', 'http', 'www']);
 wordfilter.addWords([' ur ', ' u ']);
 
 // Lyrics and annoyingly frequent rhyme words to ignore
-var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied', 'rase', 'dase', 'mane', 'mayne', 'guise'];
+var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied', 'rase', 'dase', 'mane', 'mayne', 'guise', 'demur', 'deter', 'boo', 'ores', 'ore', 'gait', 'shoals'];
 
 // Possible additions: ion
 // So many terrible mistakes, due to auto-correct and laziness. I weep for our future.
@@ -220,9 +220,9 @@ createRhymeLists = function(botData, cb) {
 	var rhymingWordsArray = [],
 		minWordLength = 3,
 		maxWordLength = 6,
-		maxArrays = 5,						// Keep rate limit in mind
+		maxArrays = 8,						// Keep rate limit in mind
 		minArrays = 2,						// maxArrays * maxDesiredNumberOfRhymes = total possible calls
-		minDesiredNumberOfRhymes = 30,		// Must be lower than 450
+		minDesiredNumberOfRhymes = 10,		// Must be lower than 450
 		maxDesiredNumberOfRhymes = 50;
 
 	for (var i = 0; i < botData.allWords.length; i++) {
@@ -343,45 +343,45 @@ getTweetsByWord = function(word, cb) {
 					data.statuses[i].text += ".";
 				}
 
-				var tweetAsIs = data.statuses[i].text;
+				var tweetOriginal = data.statuses[i].text;
 
-				// if (!/[?!.]$/.test(tweetAsIs)) {
+				// if (!/[?!.]$/.test(tweetOriginal)) {
 				// 	statsTracker.rejectTracker.noPunctuationAtEnd++;
 				// 	continue;
 				// }
 
 				// Remove tweets with excessive uppercase
-				if (/[A-Z]{2}/.test(tweetAsIs)) {
+				if (/[A-Z]{2}/.test(tweetOriginal)) {
 					statsTracker.rejectTracker.upper++;
 					continue;  
 				};
 
-				var currentTweet = data.statuses[i].text.toLowerCase();
+				var tweetLowerCase = tweetOriginal.toLowerCase();
 
 				var currentTweetID = data.statuses[i].id_str,
 					currentUserID = data.statuses[i].user.id_str,
 					currentUserScreenName = data.statuses[i].user.screen_name;
 
 				// Does the current tweet contain a number?
-				if (/[0-9]+/.test(currentTweet)) {		
+				if (/[0-9]+/.test(tweetLowerCase)) {		
 					statsTracker.rejectTracker.hasNumber++;
 					continue;
 				}
 
 				// Does the current tweet contain offensive words?
-				if (wordfilter.blacklisted(currentTweet)) {
+				if (wordfilter.blacklisted(tweetLowerCase)) {
 					statsTracker.rejectTracker.blacklist++;
 					continue;
 				}
 
 				// Does the tweet contain an emoji?
-				if (emojiRegex().test(currentTweet)) {
+				if (emojiRegex().test(tweetLowerCase)) {
 					statsTracker.rejectTracker.emoji++;
 					continue;
 				}
 
 				// Do we have ellipses or ?! or other excessive punctuation? Reject.
-				if (/[,?!.]{2}/.test(currentTweet)) {
+				if (/[,?!.]{2}/.test(tweetLowerCase)) {
 					statsTracker.rejectTracker.excessivePunctuation++;
 					continue;
 				}
@@ -391,22 +391,22 @@ getTweetsByWord = function(word, cb) {
 				// Multi Range: 50 - 70
 				// Regular Range: 35 - 50
 
-				var tweetLengthMin = 50,
+				var tweetLengthMin = 30,
 					tweetLengthMax = 70,
 					tweetMultiLengthMin = 50,
-					tweetMultiLengthMax = 70
-					tweetRegularLengthMin = 35
+					tweetMultiLengthMax = 70,
+					tweetRegularLengthMin = 30,
 					tweetRegularLengthMax = 50;
 
 
-				if ((currentTweet.length <= tweetLengthMax) && (currentTweet.length >= tweetLengthMin)) {
+				if ((tweetLowerCase.length <= tweetLengthMax) && (tweetLowerCase.length >= tweetLengthMin)) {
 				} else {
 					statsTracker.rejectTracker.length++;
 					continue;
 				}
 
 				// Remove punctuation
-				var ritaTweet = currentTweet.replace(/[?.,-\/#!$%\^&\*;:{}=\-_`~()]/g,""),
+				var ritaTweet = tweetLowerCase.replace(/[?.,-\/#!$%\^&\*;:{}=\-_`~()]/g,""),
 					ritaTweetWordsArray = ritaTweet.split(" ");
 				
 				var slangFound = 0,
@@ -417,48 +417,37 @@ getTweetsByWord = function(word, cb) {
 					maxDistanceUntilEnd = 4,
 					isMultiline = false;
 
+				var prefix = '',
+					suffix = '';
+
 				// Is our word within X characters of the end of the tweet?
 				if ((ritaTweetWordsArray.length - wordPos) <= maxDistanceUntilEnd ) {
+
+					// Is our word NOT the last word in the tweet?
 					if ((ritaTweetWordsArray.length - wordPos) > 1) {
 						isMultiline = true;
-						var wordPosStart = data.statuses[i].text.toLowerCase().lastIndexOf(word),
+
+						var wordPosStart = tweetOriginal.toLowerCase().lastIndexOf(word),
 							wordPosEnd = wordPosStart + word.length + 1;
 	    
-						var prefix = data.statuses[i].text.slice(0, wordPosEnd),
-							suffix = data.statuses[i].text.slice(wordPosEnd);
+						var prefix = tweetOriginal.slice(0, wordPosEnd),
+							suffix = tweetOriginal.slice(wordPosEnd);
 
-							if (suffix.charAt(0) == " ") {
-								suffix = suffix.slice(1);
-							};
+							suffix = suffix.trim();
 
-							// console.log('currentTweet: ' + currentTweet);
-							// console.log('prefix: ' + prefix);
-							// console.log('suffix: ' + suffix);
-
-						// Do some checking here, to determine if last character in suffix is appropriate punctuation.
-						// If not, skip
+						// Is last character in suffix appropriate punctuation? Is yes, add space.
 						if (/[?!.]/.test(suffix.charAt(suffix.length-1))) {
 							suffix += " ";
-
 						} else {
-// Add period and keep?
-							console.log("- punctuationMisMatchAtEnd: " + suffix);
-								console.log('   ' + currentTweet + " (" + currentTweet.length + ")");
-								console.log('   Prefix: ' + prefix);
-								console.log('   Suffix: ' + suffix);
 							statsTracker.rejectTracker.punctuationMisMatchAtEnd++;
 							continue;
 						}
 					} else {
-						isMultiline = false;
-						var prefix = '',
-							suffix = '';
+						// Our word is the last word in the tweet
+						isMultiline = false;					
 					};
 				} else {
-					console.log("- notNearEnd: ");
-						console.log('   ' + currentTweet + " (" + currentTweet.length + ")");
-						console.log('   Prefix: ' + prefix);
-						console.log('   Suffix: ' + suffix);
+					// console.log("- notNearEnd: ");
 					statsTracker.rejectTracker.notNearEnd++;
 					continue;
 				}
@@ -470,7 +459,7 @@ getTweetsByWord = function(word, cb) {
 						slangFound++;
 						
 						if (slangFound > maxSlangAllowed) {
-							// console.log('Has Slang: ' + currentTweet);
+							// console.log('Has Slang: ' + tweetLowerCase);
 							hasSlang = true;
 							break;
 						};
@@ -489,13 +478,13 @@ getTweetsByWord = function(word, cb) {
 				// If regular, range needs to be < 50 > 35.
 				// Ensure that word exists within 25% of total tweet length;
 				if ((isMultiline) 
-					&& (currentTweet.length >= tweetMultiLengthMin) 
-					&& (currentTweet.length <= tweetMultiLengthMax)) {
+					&& (tweetLowerCase.length >= tweetMultiLengthMin) 
+					&& (tweetLowerCase.length <= tweetMultiLengthMax)) {
 						multiRegularLengthCheck = true;
 						statsTracker.hasMultiline++;
 				} else if ((isMultiline == false)
-					&& (currentTweet.length >= tweetRegularLengthMin) 
-					&& (currentTweet.length <= tweetRegularLengthMax)) {
+					&& (tweetLowerCase.length >= tweetRegularLengthMin) 
+					&& (tweetLowerCase.length <= tweetRegularLengthMax)) {
 						multiRegularLengthCheck = true;
 				};
 
@@ -505,9 +494,9 @@ getTweetsByWord = function(word, cb) {
 				}
 
 				var tweetData = {
-					tweet: data.statuses[i].text,
+					tweet: tweetOriginal,
 					tweetID: currentTweetID,
-					tweetLength: currentTweet.length,
+					tweetLength: tweetLowerCase.length,
 					multiline: isMultiline,
 					tweetPrefix: prefix,
 					tweetSuffix: suffix,
@@ -520,11 +509,11 @@ getTweetsByWord = function(word, cb) {
 				twitterResults.push(tweetData);
 
 				if (isMultiline) {
-					console.log('M ' + tweetData.tweet + " (" + currentTweet.length + ")");
+					console.log('M ' + tweetData.tweet + " (" + tweetLowerCase.length + ")");
 					console.log('   Prefix: ' + prefix);
 					console.log('   Suffix: ' + suffix);
 				} else {
-					console.log("+ " + tweetData.tweet + " (" + currentTweet.length + ")");
+					console.log("+ " + tweetData.tweet + " (" + tweetLowerCase.length + ")");
 				}
 			}
 
@@ -594,17 +583,16 @@ checkRequirements = function(botData, cb) {
 	var rhymeSets = botData.rhymeSchemeArray,
 		totalRhymeSets = rhymeSets.length;
 
-	console.log('---');
 	console.log(JSON.stringify(rhymeSets));
+
 
 	if (totalRhymeSets >= 2) {
 
 		// Locate "A Phrases." We need 7.
 		for (var i = 0; i < rhymeSets.length; i++) {
+			rhymeSets[i] = _.uniq(rhymeSets[i]);
+
 			if (rhymeSets[i].length >= 7) {
-
-				rhymeSets[i] = _.uniq(rhymeSets[i]);
-
 				var totalMultilines = 0,
 					totalRegularLines = 0,
 					totalNeededLines = 7,
@@ -617,8 +605,10 @@ checkRequirements = function(botData, cb) {
 				allPhrases = rhymeSets[i];
 
 				// Determine multi vs regular lines
-				for (var a = 0; a <allPhrases.length; a++) {
+				for (var a = 0; a < allPhrases.length; a++) {
 					allPhrases[a] = allPhrases[a][0];
+
+// Make prefix charAt(0) uppercase as well?
 					allPhrases[a].tweet = allPhrases[a].tweet.charAt(0).toUpperCase() + allPhrases[a].tweet.slice(1);
 
 					if (allPhrases[a].multiline) {
@@ -629,9 +619,6 @@ checkRequirements = function(botData, cb) {
 						regularPhrases.push(allPhrases[a]);
 					}
 				};
-
-				// console.log('regularPhrases: ' + JSON.stringify(regularPhrases));
-				// console.log('multilinePhrases: ' + JSON.stringify(multilinePhrases));
 
 				// Do we have enough?
 				if ((totalRegularLines >= minRegularLines) && (totalMultilines >= (totalNeededLines - totalRegularLines))) {
@@ -656,20 +643,20 @@ checkRequirements = function(botData, cb) {
 			}
 		}
 
-// Determine number of multilines in arrayA
-// First two are regular. That means check 3 - 7 
-// multi, regular, regular, multi etc...
 
-// Then when constructing bArray
-// Go through one time, and for every multi - grab from top.
-// Then shuffle remaining, and populate with remaining.
 
 
 
 		// Local "B Phrases." We need 6.
 		if (botData.aPhrasesQuotaMet) {
+		
 			for (var j = 0; j < rhymeSets.length; j++) {
-				rhymeSets[j] = _.uniq(rhymeSets[j]);
+				console.log(" ");
+				console.log(">>> B Phrases Loop");
+				console.log("Before: rhymeSets[j]: " + JSON.stringify(rhymeSets[j]));
+					rhymeSets[j] = _.uniq(rhymeSets[j]);
+				console.log("After: rhymeSets[j]: " + JSON.stringify(rhymeSets[j]));
+
 
 				// Remove all multilines
 				var allPhrases = [],
@@ -677,21 +664,18 @@ checkRequirements = function(botData, cb) {
 
 				allPhrases = rhymeSets[j];
 
-				// console.log("---------");
-				// console.log(JSON.stringify(rhymeSets[j]));
+
 
 				for (var z = 0; z < allPhrases.length; z++) {
-					// console.log("z: " + z);
-					console.log('allPhrases[z][0]: ' + JSON.stringify(allPhrases[z][0]));
+					console.log(' ');
+					console.log('z: ' + z);
+					console.log('allPhrases[z]: ' + JSON.stringify(allPhrases[z]));
+					console.log(' ');
 
 					if ((allPhrases[z][0].multiline) == false) {
-						regularPhrases.push(allPhrases[z]);
+						regularPhrases.push(allPhrases[z][0]);
 					} 
 				};
-
-				// console.log('+++++++++++++++++++++++++++');
-				// console.log(JSON.stringify(regularPhrases));
-				// console.log('+++++++++++++++++++++++++++');
 
 				rhymeSets[j] = regularPhrases;
 
@@ -702,7 +686,7 @@ checkRequirements = function(botData, cb) {
 
 					// Check if any b phrases match a phrases.
 					for (var b = botData.bPhrases.length - 1; b >= 0; b--) {
-						botData.bPhrases[b] = botData.bPhrases[b][0];
+						// botData.bPhrases[b] = botData.bPhrases[b][0];
 						botData.bPhrases[b].tweet = botData.bPhrases[b].tweet.charAt(0).toUpperCase() + botData.bPhrases[b].tweet.slice(1);
 
 						for (var x = 0; x < botData.aPhrases.length; x++) {

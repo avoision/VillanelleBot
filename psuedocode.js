@@ -105,9 +105,13 @@ Suffix: .
 
 ---
 
+If God gave you the choice to be born or not what would you chose . (67)
+Prefix: If God gave you the choice to be born or not what would you chose
+Suffix: .
 
+---
 
-
-
+I dead need a chill ass day 
+after last night. 
 
 
