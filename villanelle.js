@@ -7,6 +7,7 @@ var request       = require('request');
 var emojiRegex 	  = require('emoji-regex');
 var tumblr 		  = require('tumblr.js');
 var rita 		  = require('rita');
+var levenshtein   = require('fast-levenshtein');
 
 var t = new Twit({
     consumer_key: 			process.env.VILLANELLE_TWIT_CONSUMER_KEY,
@@ -25,6 +26,9 @@ var wordnikKey = 			process.env.VILLANELLE_WORDNIK_KEY;
 
 // RiTa.js
 var lexicon = new rita.RiLexicon();
+
+// Levenshtein distance, to avoid similar strings.
+var levenshteinThreshold = 5;
 
 // Bad words
 wordfilter.addWords(['nigga', 'niggas', 'nigg', 'pussies', 'gay']);
@@ -387,16 +391,12 @@ getTweetsByWord = function(word, cb) {
 				}
 
 				// Keep within preferred character length
-				// Full Range: 35 - 70
-				// Multi Range: 50 - 70
-				// Regular Range: 35 - 50
-
 				var tweetLengthMin = 30,
-					tweetLengthMax = 70,
-					tweetMultiLengthMin = 50,
-					tweetMultiLengthMax = 70,
+					tweetLengthMax = 65,
+					tweetMultiLengthMin = 45,
+					tweetMultiLengthMax = 65,
 					tweetRegularLengthMin = 30,
-					tweetRegularLengthMax = 50;
+					tweetRegularLengthMax = 47;
 
 
 				if ((tweetLowerCase.length <= tweetLengthMax) && (tweetLowerCase.length >= tweetLengthMin)) {
@@ -434,6 +434,8 @@ getTweetsByWord = function(word, cb) {
 							suffix = tweetOriginal.slice(wordPosEnd);
 
 							suffix = suffix.trim();
+
+						prefix = prefix.charAt(0).toUpperCase() + prefix.slice(1);
 
 						// Is last character in suffix appropriate punctuation? Is yes, add space.
 						if (/[?!.]/.test(suffix.charAt(suffix.length-1))) {
@@ -570,10 +572,48 @@ gatherAndCleanPhrases = function(botData, cb) {
 		}
 	};
 
-	// Removing duplicates
+
+	console.log(' ');
+	console.log('--------- Before ---------');
+	console.log(JSON.stringify(rhymesData));
+	console.log('---------');
+	console.log(' ');
+
+
+	// Removing duplicates using Levenshtein Distance
+	var tempArray = [];
+
 	for (var a = 0; a < rhymesData.length; a++) {
-		rhymesData[a] = _.uniq(rhymesData[a]);
+		tempArray[a] = [];
+		for (var b = 0; b < rhymesData[a].length; b++) {
+			tempArray[a][b] = [];
+			if (tempArray.length > 0) {
+				var isOriginal = true;					
+				for (var c = b + 1; c < rhymesData[a].length; c++) {
+					var distance = levenshtein.get(rhymesData[a][b][0].tweet.toLowerCase(), rhymesData[a][c][0].tweet.toLowerCase());
+					if (distance < levenshteinThreshold) {
+						isOriginal = false;
+						break;
+					}
+				}
+			} else {
+				tempArray[a][b].push(rhymesData[a][b][0]);
+			}
+
+			if (isOriginal) {
+				tempArray[a][b].push(rhymesData[a][b][0]);
+			}
+		}
 	} 
+
+	rhymesData = tempArray;
+
+	console.log(' ');
+	console.log('--------- After ---------');
+	console.log(JSON.stringify(rhymesData));
+	console.log('---------');
+	console.log(' ');
+
 
 	botData.rhymeSchemeArray = rhymesData;
 	cb(null, botData);
@@ -672,9 +712,12 @@ checkRequirements = function(botData, cb) {
 					console.log('allPhrases[z]: ' + JSON.stringify(allPhrases[z]));
 					console.log(' ');
 
-					if ((allPhrases[z][0].multiline) == false) {
-						regularPhrases.push(allPhrases[z][0]);
-					} 
+					// Prevent against empty arrays
+					if (allPhrases[z].length > 0) {
+						if ((allPhrases[z][0].multiline) == false) {
+							regularPhrases.push(allPhrases[z][0]);
+						} 
+					};
 				};
 
 				rhymeSets[j] = regularPhrases;
@@ -686,7 +729,6 @@ checkRequirements = function(botData, cb) {
 
 					// Check if any b phrases match a phrases.
 					for (var b = botData.bPhrases.length - 1; b >= 0; b--) {
-						// botData.bPhrases[b] = botData.bPhrases[b][0];
 						botData.bPhrases[b].tweet = botData.bPhrases[b].tweet.charAt(0).toUpperCase() + botData.bPhrases[b].tweet.slice(1);
 
 						for (var x = 0; x < botData.aPhrases.length; x++) {
