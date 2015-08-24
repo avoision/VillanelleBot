@@ -28,7 +28,7 @@ var wordnikKey = 			process.env.VILLANELLE_WORDNIK_KEY;
 var lexicon = new rita.RiLexicon();
 
 // Levenshtein distance, to avoid similar strings.
-var levenshteinThreshold = 5;
+var levenshteinThreshold = 10;
 
 // Bad words
 wordfilter.addWords(['nigga', 'niggas', 'nigg', 'pussies', 'gay']);
@@ -40,7 +40,7 @@ wordfilter.addWords(['@','#', 'http', 'www']);
 wordfilter.addWords([' ur ', ' u ']);
 
 // Lyrics and annoyingly frequent rhyme words to ignore
-var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied', 'rase', 'dase', 'mane', 'mayne', 'guise', 'demur', 'deter', 'boo', 'ores', 'ore', 'gait', 'shoals'];
+var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied', 'rase', 'dase', 'mane', 'mayne', 'guise', 'demur', 'deter', 'boo', 'ores', 'ore', 'gait', 'shoals', 'pries', 'moat'];
 
 // Possible additions: ion
 // So many terrible mistakes, due to auto-correct and laziness. I weep for our future.
@@ -573,11 +573,11 @@ gatherAndCleanPhrases = function(botData, cb) {
 	};
 
 
-	console.log(' ');
-	console.log('--------- Before ---------');
-	console.log(JSON.stringify(rhymesData));
-	console.log('---------');
-	console.log(' ');
+	// console.log(' ');
+	// console.log('--------- Before ---------');
+	// console.log(JSON.stringify(rhymesData));
+	// console.log('---------');
+	// console.log(' ');
 
 
 	// Removing duplicates using Levenshtein Distance
@@ -592,6 +592,14 @@ gatherAndCleanPhrases = function(botData, cb) {
 				for (var c = b + 1; c < rhymesData[a].length; c++) {
 					var distance = levenshtein.get(rhymesData[a][b][0].tweet.toLowerCase(), rhymesData[a][c][0].tweet.toLowerCase());
 					if (distance < levenshteinThreshold) {
+
+						console.log(' ');
+						console.log('|| Levenshtein Distance ||');		
+						console.log(rhymesData[a][b][0].tweet.toLowerCase());
+						console.log(rhymesData[a][c][0].tweet.toLowerCase());
+						console.log('Distance: ' + distance);
+						console.log(' ');
+
 						isOriginal = false;
 						break;
 					}
@@ -608,11 +616,11 @@ gatherAndCleanPhrases = function(botData, cb) {
 
 	rhymesData = tempArray;
 
-	console.log(' ');
-	console.log('--------- After ---------');
-	console.log(JSON.stringify(rhymesData));
-	console.log('---------');
-	console.log(' ');
+	// console.log(' ');
+	// console.log('--------- After ---------');
+	// console.log(JSON.stringify(rhymesData));
+	// console.log('---------');
+	// console.log(' ');
 
 
 	botData.rhymeSchemeArray = rhymesData;
@@ -620,9 +628,11 @@ gatherAndCleanPhrases = function(botData, cb) {
 }
 
 checkRequirements = function(botData, cb) {
-	var rhymeSets = botData.rhymeSchemeArray,
-		totalRhymeSets = rhymeSets.length;
+	var rhymeSets = botData.rhymeSchemeArray;
+	var totalRhymeSets = rhymeSets.length;
 
+	console.log(' ');
+	console.log('+++++++++');
 	console.log(JSON.stringify(rhymeSets));
 
 
@@ -648,15 +658,19 @@ checkRequirements = function(botData, cb) {
 				for (var a = 0; a < allPhrases.length; a++) {
 					allPhrases[a] = allPhrases[a][0];
 
-// Make prefix charAt(0) uppercase as well?
-					allPhrases[a].tweet = allPhrases[a].tweet.charAt(0).toUpperCase() + allPhrases[a].tweet.slice(1);
+					console.log('allPhrases[' + a + ']: ' + JSON.stringify(allPhrases[a]));
 
-					if (allPhrases[a].multiline) {
-						totalMultilines++;
-						multilinePhrases.push(allPhrases[a]);
-					} else {
-						totalRegularLines++;
-						regularPhrases.push(allPhrases[a]);
+					// Terrible fix.
+					if (allPhrases[a] != undefined) {
+						allPhrases[a].tweet = allPhrases[a].tweet.charAt(0).toUpperCase() + allPhrases[a].tweet.slice(1);
+
+						if (allPhrases[a].multiline) {
+							totalMultilines++;
+							multilinePhrases.push(allPhrases[a]);
+						} else {
+							totalRegularLines++;
+							regularPhrases.push(allPhrases[a]);
+						}
 					}
 				};
 
@@ -691,9 +705,9 @@ checkRequirements = function(botData, cb) {
 		if (botData.aPhrasesQuotaMet) {
 		
 			for (var j = 0; j < rhymeSets.length; j++) {
-				console.log(" ");
+				// console.log(" ");
 				console.log(">>> B Phrases Loop");
-				console.log("Before: rhymeSets[j]: " + JSON.stringify(rhymeSets[j]));
+				// console.log("Before: rhymeSets[j]: " + JSON.stringify(rhymeSets[j]));
 					rhymeSets[j] = _.uniq(rhymeSets[j]);
 				console.log("After: rhymeSets[j]: " + JSON.stringify(rhymeSets[j]));
 
@@ -704,13 +718,11 @@ checkRequirements = function(botData, cb) {
 
 				allPhrases = rhymeSets[j];
 
-
-
 				for (var z = 0; z < allPhrases.length; z++) {
-					console.log(' ');
-					console.log('z: ' + z);
-					console.log('allPhrases[z]: ' + JSON.stringify(allPhrases[z]));
-					console.log(' ');
+					// console.log(' ');
+					// console.log('z: ' + z);
+					// console.log('allPhrases[z]: ' + JSON.stringify(allPhrases[z]));
+					// console.log(' ');
 
 					// Prevent against empty arrays
 					if (allPhrases[z].length > 0) {

@@ -99,19 +99,9 @@ var villanelle =
 Investigate these occurrences
 ---------------------------
 
-My notes on my phone will have you in tears . (45)
-Prefix: My notes on my phone will have you in tears
-Suffix: .
+Place flooding index ideas: pLy.
 
 ---
 
-If God gave you the choice to be born or not what would you chose . (67)
-Prefix: If God gave you the choice to be born or not what would you chose
-Suffix: .
-
----
-
-I dead need a chill ass day 
-after last night. 
 
 
