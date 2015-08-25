@@ -94,6 +94,13 @@ var villanelle =
 	+ "<a href=\"" + A1.url + "\">" + A1.tweet + "</a><br />"
 	+ "<a href=\"" + A2.url + "\">" + A2.tweet + "</a></p>"
 
+---------------------------
+Deus Ex Machina
+---------------------------
+Capitalize first letter.
+Add period at the end.
+Capitalize instances of 'i'
+
 
 ---------------------------
 Investigate these occurrences

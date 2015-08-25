@@ -48,7 +48,7 @@ wordfilter.addWords(['@','#', 'http', 'www']);
 wordfilter.addWords([' ur ', ' u ']);
 
 // Lyrics and annoyingly frequent rhyme words to ignore
-var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied', 'rase', 'dase', 'mane', 'mayne', 'guise', 'demur', 'deter', 'boo', 'ores', 'ore', 'gait', 'shoals', 'pries', 'moat'];
+var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied', 'rase', 'dase', 'mane', 'mayne', 'guise', 'demur', 'deter', 'boo', 'ores', 'ore', 'gait', 'shoals', 'pries', 'moat', 'rye', 'blurt'];
 
 // Possible additions: ion
 // So many terrible mistakes, due to auto-correct and laziness. I weep for our future.
@@ -67,6 +67,7 @@ var statsTracker = {
 		excessivePunctuation: 0,
 		noPunctuationAtEnd: 0,
 		punctuationMisMatchAtEnd: 0,
+		repetition: 0,
 		paradiseFound: 0,
 		slang: 0,
 		upper: 0
@@ -358,17 +359,16 @@ getTweetsByWord = function(word, cb) {
 
 				data.statuses[i].text = data.statuses[i].text.trim();
 
-				// I hate to mess with the original tweet. But done out of necessity.
+				// Alteration: Adding period at the end of tweets.
+				// I hate to mess with the original tweet. But we do this for Art!
 				if (/[a-z]$/.test(data.statuses[i].text)) {
 					data.statuses[i].text += ".";
 				}
 
-				var tweetOriginal = data.statuses[i].text;
+				var lowSelfEsteem = / i /g;
+				data.statuses[i].text = data.statuses[i].text.replace(lowSelfEsteem, ' I ');
 
-				// if (!/[?!.]$/.test(tweetOriginal)) {
-				// 	statsTracker.rejectTracker.noPunctuationAtEnd++;
-				// 	continue;
-				// }
+				var tweetOriginal = data.statuses[i].text;
 
 				// Remove tweets with excessive uppercase
 				if (/[A-Z]{2}/.test(tweetOriginal)) {
@@ -382,8 +382,8 @@ getTweetsByWord = function(word, cb) {
 					currentUserID = data.statuses[i].user.id_str,
 					currentUserScreenName = data.statuses[i].user.screen_name;
 
-				// Does the current tweet contain a number?
-				if (/[0-9]+/.test(tweetLowerCase)) {		
+				// Does the current tweet contain a number or weird characters?
+				if (/[0-9#\/]+/.test(tweetLowerCase)) {		
 					statsTracker.rejectTracker.hasNumber++;
 					continue;
 				}
@@ -404,6 +404,16 @@ getTweetsByWord = function(word, cb) {
 				if (/[,?!.]{2}/.test(tweetLowerCase)) {
 					statsTracker.rejectTracker.excessivePunctuation++;
 					continue;
+				}
+
+				// Repeat offenders.
+				if (
+					(tweetLowerCase.indexOf('men cry and defy') > -1) || 
+				   	(tweetLowerCase.indexOf('episode of teen wolf') > -1) || 
+				   	(tweetLowerCase.indexOf('head in a comfortable bed') > -1)
+				   ) {
+						statsTracker.rejectTracker.repetition++;
+						continue;				 	
 				}
 
 				// Keep within preferred character length
