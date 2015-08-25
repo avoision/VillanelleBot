@@ -15,6 +15,14 @@ var t = new Twit({
     app_only_auth: 			true
 });
 
+var tf = new Twit({
+    consumer_key: 			process.env.VILLANELLE_TWIT_CONSUMER_KEY,
+    consumer_secret: 		process.env.VILLANELLE_TWIT_CONSUMER_SECRET,
+    access_token: 			process.env.VILLANELLE_TWIT_ACCESS_TOKEN,
+    access_token_secret: 	process.env.VILLANELLE_TWIT_ACCESS_TOKEN_SECRET
+});
+
+
 var tumblrClient = tumblr.createClient({
   consumer_key: 			process.env.VILLANELLE_TUMBLR_CONSUMER_KEY,
   consumer_secret: 			process.env.VILLANELLE_TUMBLR_CONSUMER_SECRET,
@@ -59,6 +67,7 @@ var statsTracker = {
 		excessivePunctuation: 0,
 		noPunctuationAtEnd: 0,
 		punctuationMisMatchAtEnd: 0,
+		paradiseFound: 0,
 		slang: 0,
 		upper: 0
 	}
@@ -339,6 +348,13 @@ getTweetsByWord = function(word, cb) {
 			// Loop through all returned statues
 			for (var i = 0; i < data.statuses.length; i++) {
 				statsTracker.total++;
+
+				// Is it one of the Paradise Lost bots? Milton!!!
+				var username = data.statuses[i].user.screen_name;
+				if (/milton_book/.test(username)) {
+					statsTracker.rejectTracker.paradiseFound++;
+					continue;
+				};
 
 				data.statuses[i].text = data.statuses[i].text.trim();
 
@@ -807,9 +823,29 @@ formatPoem = function(botData, cb) {
 			return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
 			});
 
-		while ((theTitle.charAt(theTitle.length-1) == ".") || (theTitle.charAt(theTitle.length-1) == ",")) {
-		    theTitle = theTitle.substr(0, theTitle.length-1);
+		var hasPunctuation = false;
+		if (/[?!.;]/.test(theTitle)) {
+			if (theTitle.indexOf('?') != -1) {
+				theTitle = theTitle.slice(0, theTitle.indexOf('?'));
+			};
+			if (theTitle.indexOf('!') != -1) {
+				theTitle = theTitle.slice(0, theTitle.indexOf('!'));
+			};
+			if (theTitle.indexOf('.') != -1) {
+				theTitle = theTitle.slice(0, theTitle.indexOf('.'));
+			};
+			if (theTitle.indexOf(';') != -1) {
+				theTitle = theTitle.slice(0, theTitle.indexOf(';'));
+			};			
 		};
+
+		if (theTitle.charAt(theTitle.length-1) == ";") {
+			theTitle = theTitle.substr(0, theTitle.length-1);
+		};
+
+		// while ((theTitle.charAt(theTitle.length-1) == ".") || (theTitle.charAt(theTitle.length-1) == ",") || (theTitle.charAt(theTitle.length-1) == ";")) {
+		//     theTitle = theTitle.substr(0, theTitle.length-1);
+		// };
 
 		botData.tumblrPostTitle = theTitle;
 		return theTitle;
@@ -931,10 +967,49 @@ publishPoem = function(botData, poemTitle, villanelle, cb) {
 			console.log("Success: " + JSON.stringify(success));
 			botData.tumblrPostID = success.id;
 			console.log('http://villanellebot.tumblr.com/post/' + botData.tumblrPostID);
+			cb(null, botData);
 		} else {
 			console.log("Errors: " + err);
 		}
 	});
+}
+
+favoriteTweets = function(botData, cb) {
+	console.log("========= Favorite Tweets =========");
+	var tweetIDs = [];
+
+	for (a = 0; a < botData.aPhrases.length; a++) {
+		tweetIDs.push(botData.aPhrases[a].id);
+	};
+
+	for (b = 0; b < botData.bPhrases.length; b++) {
+		tweetIDs.push(botData.bPhrases[b].id);
+	};
+
+	for (f = 0; f < tweetIDs.length; f++ ) {
+	    tf.post('favorites/create', {id: tweetIDs[f]}, function(err, data, response) {
+	    	if (!err) {
+	    		console.log("Favorited: " + data.id);
+	    	} else {
+	    		console.log(err);
+	    	}
+	    });
+	}
+
+	cb(null, botData);
+}
+
+announcePoem = function(botData, cb) {
+	var announceText = "\"" + botData.tumblrPostTitle + "\" - "; 
+		poemURL = 'http://villanellebot.tumblr.com/post/' + botData.tumblrPostID;
+
+	tf.post('statuses/update', { status: announceText + poemURL }, function(err, data, response) {
+  		if (!err) {
+  			console.log("Villanelle Announced!");
+  		} else {
+  			console.log(err);
+  		}
+	})
 
 	cb(null);
 }
@@ -991,6 +1066,8 @@ run = function() {
 		checkRequirements,
 		formatPoem,
 		publishPoem,
+		// favoriteTweets,
+		announcePoem,
 		rateLimitCheck
     ],
     function(err, botData) {
