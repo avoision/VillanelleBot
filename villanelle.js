@@ -48,7 +48,7 @@ wordfilter.addWords(['@','#', 'http', 'www']);
 wordfilter.addWords([' ur ', ' u ']);
 
 // Lyrics and annoyingly frequent rhyme words to ignore
-var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied', 'rase', 'dase', 'mane', 'mayne', 'guise', 'demur', 'deter', 'boo', 'ores', 'ore', 'gait', 'shoals', 'pries', 'moat', 'rye', 'blurt'];
+var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied', 'rase', 'dase', 'mane', 'mayne', 'guise', 'demur', 'deter', 'boo', 'ores', 'ore', 'gait', 'shoals', 'pries', 'moat', 'rye', 'blurt', 'flue'];
 
 // Possible additions: ion
 // So many terrible mistakes, due to auto-correct and laziness. I weep for our future.
@@ -989,11 +989,11 @@ favoriteTweets = function(botData, cb) {
 	var tweetIDs = [];
 
 	for (a = 0; a < botData.aPhrases.length; a++) {
-		tweetIDs.push(botData.aPhrases[a].id);
+		tweetIDs.push(botData.aPhrases[a].tweetID);
 	};
 
 	for (b = 0; b < botData.bPhrases.length; b++) {
-		tweetIDs.push(botData.bPhrases[b].id);
+		tweetIDs.push(botData.bPhrases[b].tweetID);
 	};
 
 	for (f = 0; f < tweetIDs.length; f++ ) {
