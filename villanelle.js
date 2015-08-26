@@ -48,7 +48,7 @@ wordfilter.addWords(['@','#', 'http', 'www']);
 wordfilter.addWords([' ur ', ' u ']);
 
 // Lyrics and annoyingly frequent rhyme words to ignore
-var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied', 'rase', 'dase', 'mane', 'mayne', 'guise', 'demur', 'deter', 'boo', 'ores', 'ore', 'gait', 'shoals', 'pries', 'moat', 'rye', 'blurt', 'flue'];
+var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arcade', 'doe', 'fomented', 'ion', 'mane', 'mayne', 'dase', 'belied', 'rase', 'dase', 'mane', 'mayne', 'guise', 'demur', 'deter', 'boo', 'ores', 'ore', 'gait', 'shoals', 'pries', 'moat', 'rye', 'blurt', 'flue', 'cleat', 'skeet'];
 
 // Possible additions: ion
 // So many terrible mistakes, due to auto-correct and laziness. I weep for our future.
@@ -69,6 +69,7 @@ var statsTracker = {
 		punctuationMisMatchAtEnd: 0,
 		repetition: 0,
 		paradiseFound: 0,
+		selfReference: 0,
 		slang: 0,
 		upper: 0
 	}
@@ -234,7 +235,7 @@ createRhymeLists = function(botData, cb) {
 	var rhymingWordsArray = [],
 		minWordLength = 3,
 		maxWordLength = 6,
-		maxArrays = 8,						// Keep rate limit in mind
+		maxArrays = 10,						// Keep rate limit in mind
 		minArrays = 2,						// maxArrays * maxDesiredNumberOfRhymes = total possible calls
 		minDesiredNumberOfRhymes = 10,		// Must be lower than 450
 		maxDesiredNumberOfRhymes = 50;
@@ -356,6 +357,12 @@ getTweetsByWord = function(word, cb) {
 					statsTracker.rejectTracker.paradiseFound++;
 					continue;
 				};
+
+				// Don't quote yourself. It's gauche.
+				if (/VillanelleBot/.test(username)) {
+					statsTracker.rejectTracker.selfReference++;
+					continue;
+				}
 
 				data.statuses[i].text = data.statuses[i].text.trim();
 
@@ -555,8 +562,10 @@ getTweetsByWord = function(word, cb) {
 
 			cb(null, twitterResults);
 		} else {
+			// Error, most likely rate limit reached. Continue anyways.
 			console.log(err);
 			cb("There was an error getting a public Tweet.");
+			// cb(null, twitterResults);
 		}
     });
 };
@@ -987,6 +996,7 @@ publishPoem = function(botData, poemTitle, villanelle, cb) {
 favoriteTweets = function(botData, cb) {
 	console.log("========= Favorite Tweets =========");
 	var tweetIDs = [];
+	// var tweetIDs = ['635617733611155456', '635599146792017920', '635148439718903808'];
 
 	for (a = 0; a < botData.aPhrases.length; a++) {
 		tweetIDs.push(botData.aPhrases[a].tweetID);
@@ -996,17 +1006,30 @@ favoriteTweets = function(botData, cb) {
 		tweetIDs.push(botData.bPhrases[b].tweetID);
 	};
 
+	botData.counter = 0;
+
 	for (f = 0; f < tweetIDs.length; f++ ) {
-	    tf.post('favorites/create', {id: tweetIDs[f]}, function(err, data, response) {
+	    tf.post('favorites/create', {id: tweetIDs[f]}, function(err, data, response, f) {
 	    	if (!err) {
 	    		console.log("Favorited: " + data.id);
 	    	} else {
-	    		console.log(err);
+	    		var phrase = "";
+	    		if (f <= 6) {
+	    			// phrase = botData.aPhrases[f].tweet;
+					console.log("   ! Repeat: " + botData.aPhrases[f].tweet);
+	    		} else {
+	    			// phrase = botData.bPhrases[(f - 6)].tweet;
+	    			console.log("   ! Repeat: " + botData.bPhrases[(f - 6)].tweet);
+	    		}
+	    		// console.log("   ! Repeat: " + phrase);
+	    	}
+
+	    	botData.counter++;
+	    	if (botData.counter >= tweetIDs.length) {
+				cb(null, botData);	    		
 	    	}
 	    });
 	}
-
-	cb(null, botData);
 }
 
 announcePoem = function(botData, cb) {
@@ -1019,9 +1042,8 @@ announcePoem = function(botData, cb) {
   		} else {
   			console.log(err);
   		}
-	})
-
-	cb(null);
+		cb(null);
+	});
 }
 
 rateLimitCheck = function(cb) {
