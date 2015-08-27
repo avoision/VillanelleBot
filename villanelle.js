@@ -1014,12 +1014,13 @@ favoriteTweets = function(botData, cb) {
 	    		console.log("Favorited: " + data.id);
 	    	} else {
 	    		var phrase = "";
+	    		console.log("f is: " + f);
 	    		if (f <= 6) {
 	    			// phrase = botData.aPhrases[f].tweet;
-					console.log("   ! Repeat: " + botData.aPhrases[f].tweet);
+					console.log("   ! Repeat: " + JSON.stringify(botData.aPhrases[f]));
 	    		} else {
 	    			// phrase = botData.bPhrases[(f - 6)].tweet;
-	    			console.log("   ! Repeat: " + botData.bPhrases[(f - 6)].tweet);
+	    			console.log("   ! Repeat: " + JSON.stringify(botData.bPhrases[(f - 6)]));
 	    		}
 	    		// console.log("   ! Repeat: " + phrase);
 	    	}
