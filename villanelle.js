@@ -1099,7 +1099,7 @@ run = function() {
 		checkRequirements,
 		formatPoem,
 		publishPoem,
-		favoriteTweets,
+		// favoriteTweets,
 		announcePoem,
 		rateLimitCheck
     ],
