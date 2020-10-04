@@ -984,8 +984,9 @@ publishPoem = function(botData, poemTitle, villanelle, cb) {
 	tumblrClient.text(blogName, options, function(err, success) {
 		if (!err) {
 			console.log("Success: " + JSON.stringify(success));
-			botData.tumblrPostID = success.id;
-			console.log('http://villanellebot.tumblr.com/post/' + botData.tumblrPostID);
+      botData.tumblrPostID = success.id;
+      var convertedTitle = poemTitle.replace(/\s+/g, '-').toLowerCase();
+      console.log('http://villanellebot.tumblr.com/post/' + convertedTitle);
 			cb(null, botData);
 		} else {
 			console.log("Errors: " + err);
@@ -1034,8 +1035,9 @@ favoriteTweets = function(botData, cb) {
 }
 
 announcePoem = function(botData, cb) {
-	var announceText = "\"" + botData.tumblrPostTitle + "\" - "; 
-		poemURL = 'http://villanellebot.tumblr.com/post/' + botData.tumblrPostID;
+  var announceText = "\"" + botData.tumblrPostTitle + "\" - ";
+  var convertedTitle = poemTitle.replace(/\s+/g, '-').toLowerCase();
+	var poemURL = 'http://villanellebot.tumblr.com/post/' + convertedTitle;
 
 	tf.post('statuses/update', { status: announceText + poemURL }, function(err, data, response) {
   		if (!err) {
