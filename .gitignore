@@ -7,3 +7,4 @@ _src
 .netrc
 response.js
 psuedocode.js
+.envrc
