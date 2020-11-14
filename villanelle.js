@@ -57,7 +57,7 @@ var annoyingRhymeRepeaters = ['grenade', 'dorr', 'hand-granade', 'noncore', 'arc
 var statsTracker = {
 	total: 0,
 	accepted: 0,
-	hasMultiline: 0,	
+	hasMultiline: 0,
 	rejectTracker: {
 		blacklist: 0,
 		emoji: 0,
@@ -76,7 +76,7 @@ var statsTracker = {
 };
 
 getRandomWords = function(cb) {
-	console.log("========= Get Random Words =========");	
+	console.log("========= Get Random Words =========");
 	var botData = {
 		counter: 0,
 		wordCounter: 0,
@@ -112,8 +112,8 @@ getRandomWords = function(cb) {
 		api_key: wordnikKey
     };
 
-    var wordnikGetRandomWordsURL = 
-		"http://api.wordnik.com:80/v4/words.json/randomWords" 
+    var wordnikGetRandomWordsURL =
+		"http://api.wordnik.com:80/v4/words.json/randomWords"
 		+ "?hasDictionaryDef=" + wordnikRandomOptions.hasDictionaryDef
 		+ "&includePartOfSpeech=" + wordnikRandomOptions.includePartOfSpeech
 		+ "&minCorpusCount=" + wordnikRandomOptions.minCorpusCount
@@ -140,11 +140,11 @@ getRandomWords = function(cb) {
 };
 
 cleanRandomWords = function(botData, result, cb) {
-	console.log("========= Clean Random Words =========");	
+	console.log("========= Clean Random Words =========");
 	for (var i = result.length - 1; i >= 0; i--) {
-		
+
 		// If word begins with a capital letter, or contains an apostrophe: remove.
-		if ((result[i].word.charAt(0) == result[i].word.charAt(0).toUpperCase()) 
+		if ((result[i].word.charAt(0) == result[i].word.charAt(0).toUpperCase())
 			|| (/'/.test(result[i].word))) {
 			result.splice(i, 1);
 		} else {
@@ -153,12 +153,12 @@ cleanRandomWords = function(botData, result, cb) {
 	};
 
 	botData.allWords = _.shuffle(botData.allWords);
-	
+
 	// Reduce number of similarly rhyming words from the set. Compare array elements to one another
-	// and toss out matches based on last four characters. 
+	// and toss out matches based on last four characters.
 	for (var a = 0; a < botData.allWords.length-1; a++) { // No need to select last item to compare.
-	    firstSuffix = botData.allWords[a].substr(botData.allWords[a].length - 4);  
-	    
+	    firstSuffix = botData.allWords[a].substr(botData.allWords[a].length - 4);
+
 	    for (var b = botData.allWords.length - 1; b >= a+1; b--) { // No need to check word against itself.
 	        checkSuffix = botData.allWords[b].substr(botData.allWords[b].length - 4);
 	        if (firstSuffix == checkSuffix) {
@@ -174,7 +174,7 @@ cleanRandomWords = function(botData, result, cb) {
 
 
 getAllRhymes = function(botData, cb) {
-	console.log("========= Get All Rhymes =========");	
+	console.log("========= Get All Rhymes =========");
 
 	getRhymesSequence = function() {
 	    async.mapSeries(botData.allWords, findRhymes, function(err, results){
@@ -183,8 +183,8 @@ getAllRhymes = function(botData, cb) {
 	    	} else {
 	    		botData.rhymingWordsData = results;
 	    		cb(null, botData);
-	    	}	
-	    }); 
+	    	}
+	    });
 	}
 	getRhymesSequence();
 }
@@ -200,7 +200,7 @@ findRhymes = function(word, cb) {
 
 	var client = new Client();
 
-	var wordnikURL = 
+	var wordnikURL =
 		"http://api.wordnik.com:80/v4/word.json/"
 		+ word + "/relatedWords"
 		+ "?useCanonical=" + wordnikRhymeOptions.useCanonical
@@ -211,11 +211,11 @@ findRhymes = function(word, cb) {
 	var args = {
 		headers: {'Accept':'application/json'}
 	};
-	
+
     client.get(wordnikURL, args, function (data, response) {
 		if (response.statusCode === 200) {
 			var result = JSON.parse(data);
-			
+
 			if (result.length) {
 				cb(null, result);
 			} else {
@@ -230,7 +230,7 @@ findRhymes = function(word, cb) {
 
 
 createRhymeLists = function(botData, cb) {
-	console.log("========= Create Rhyme Lists =========");	
+	console.log("========= Create Rhyme Lists =========");
 
 	var rhymingWordsArray = [],
 		minWordLength = 3,
@@ -248,7 +248,7 @@ createRhymeLists = function(botData, cb) {
 	for (var j = 0; j < botData.rhymingWordsData.length; j++) {
 		var currentArrayPos = botData.rhymingWordsData[j];
 		if (currentArrayPos != null) {
-			// Cycle through rhyming words. 
+			// Cycle through rhyming words.
 
 			for (var k = 0; k < currentArrayPos[0].words.length; k++) {
 				var isAnnoyingRhymeRepeater = false;
@@ -269,11 +269,11 @@ createRhymeLists = function(botData, cb) {
 					&& (currentWord.length >= minWordLength)
 					&& (currentWord.length <= maxWordLength)) {
 					rhymingWordsArray[j].push(currentArrayPos[0].words[k]);
-				}			
+				}
 			}
 		}
 	}
-	
+
 	// Cycle through array, remove anything with less than desired number of rhymes.
 	for (var x = rhymingWordsArray.length - 1; x >= 0; x--) {
 
@@ -318,7 +318,7 @@ getAllPublicTweets = function(botData, cb) {
 	    		cb("Problem getting Tweets. Sequence failed.");
 	    	} else {
 	    		console.log('--------- End Round ' + (botData.counter + 1) + '---------');
-	    		if (results != null) {   			
+	    		if (results != null) {
 					botData.rhymeSchemeArray.push(results);
 	    		}
 
@@ -328,9 +328,9 @@ getAllPublicTweets = function(botData, cb) {
 	    			cb(null, botData);
 	    		} else {
 	    			getAllTweetsSequence(botData.counter);
-	    		}		
-	    	}	
-	    }); 
+	    		}
+	    	}
+	    });
 	}
 
 	getAllTweetsSequence(botData.counter);
@@ -339,12 +339,12 @@ getAllPublicTweets = function(botData, cb) {
 
 getTweetsByWord = function(word, cb) {
 	var suffix = "%20-RT%20-%40%20-http";
-	
+
 	console.log('--------- ' + word + ' ---------');
 
     t.get('search/tweets', {q: word + suffix, count: 100, result_type: 'recent', lang: 'en', include_entities: 'false'}, function(err, data, response) {
 		if (!err) {
-			
+
 			var twitterResults = [];
 
 			// Loop through all returned statues
@@ -380,7 +380,7 @@ getTweetsByWord = function(word, cb) {
 				// Remove tweets with excessive uppercase
 				if (/[A-Z]{2}/.test(tweetOriginal)) {
 					statsTracker.rejectTracker.upper++;
-					continue;  
+					continue;
 				};
 
 				var tweetLowerCase = tweetOriginal.toLowerCase();
@@ -390,7 +390,7 @@ getTweetsByWord = function(word, cb) {
 					currentUserScreenName = data.statuses[i].user.screen_name;
 
 				// Does the current tweet contain a number or weird characters?
-				if (/[0-9#\/]+/.test(tweetLowerCase)) {		
+				if (/[0-9#\/]+/.test(tweetLowerCase)) {
 					statsTracker.rejectTracker.hasNumber++;
 					continue;
 				}
@@ -415,12 +415,12 @@ getTweetsByWord = function(word, cb) {
 
 				// Repeat offenders.
 				if (
-					(tweetLowerCase.indexOf('men cry and defy') > -1) || 
-				   	(tweetLowerCase.indexOf('episode of teen wolf') > -1) || 
+					(tweetLowerCase.indexOf('men cry and defy') > -1) ||
+				   	(tweetLowerCase.indexOf('episode of teen wolf') > -1) ||
 				   	(tweetLowerCase.indexOf('head in a comfortable bed') > -1)
 				   ) {
 						statsTracker.rejectTracker.repetition++;
-						continue;				 	
+						continue;
 				}
 
 				// Keep within preferred character length
@@ -441,12 +441,12 @@ getTweetsByWord = function(word, cb) {
 				// Remove punctuation
 				var ritaTweet = tweetLowerCase.replace(/[?.,-\/#!$%\^&\*;:{}=\-_`~()]/g,""),
 					ritaTweetWordsArray = ritaTweet.split(" ");
-				
+
 				var slangFound = 0,
 					maxSlangAllowed = 0,
 					hasSlang = false;
 
-				var wordPos = ritaTweetWordsArray.lastIndexOf(word), 
+				var wordPos = ritaTweetWordsArray.lastIndexOf(word),
 					maxDistanceUntilEnd = 4,
 					isMultiline = false;
 
@@ -462,7 +462,7 @@ getTweetsByWord = function(word, cb) {
 
 						var wordPosStart = tweetOriginal.toLowerCase().lastIndexOf(word),
 							wordPosEnd = wordPosStart + word.length + 1;
-	    
+
 						var prefix = tweetOriginal.slice(0, wordPosEnd),
 							suffix = tweetOriginal.slice(wordPosEnd);
 
@@ -479,7 +479,7 @@ getTweetsByWord = function(word, cb) {
 						}
 					} else {
 						// Our word is the last word in the tweet
-						isMultiline = false;					
+						isMultiline = false;
 					};
 				} else {
 					// console.log("- notNearEnd: ");
@@ -492,7 +492,7 @@ getTweetsByWord = function(word, cb) {
 					if (lexicon.containsWord(ritaTweetWordsArray[p]) == undefined) {
 						// console.log("Flagged: " + ritaTweetWordsArray[p]);
 						slangFound++;
-						
+
 						if (slangFound > maxSlangAllowed) {
 							// console.log('Has Slang: ' + tweetLowerCase);
 							hasSlang = true;
@@ -503,7 +503,7 @@ getTweetsByWord = function(word, cb) {
 
 				if (hasSlang) {
 					statsTracker.rejectTracker.slang++;
-					continue;					
+					continue;
 				};
 
 
@@ -512,13 +512,13 @@ getTweetsByWord = function(word, cb) {
 				// If multi, range needs to be 50 - 70
 				// If regular, range needs to be < 50 > 35.
 				// Ensure that word exists within 25% of total tweet length;
-				if ((isMultiline) 
-					&& (tweetLowerCase.length >= tweetMultiLengthMin) 
+				if ((isMultiline)
+					&& (tweetLowerCase.length >= tweetMultiLengthMin)
 					&& (tweetLowerCase.length <= tweetMultiLengthMax)) {
 						multiRegularLengthCheck = true;
 						statsTracker.hasMultiline++;
 				} else if ((isMultiline == false)
-					&& (tweetLowerCase.length >= tweetRegularLengthMin) 
+					&& (tweetLowerCase.length >= tweetRegularLengthMin)
 					&& (tweetLowerCase.length <= tweetRegularLengthMax)) {
 						multiRegularLengthCheck = true;
 				};
@@ -552,7 +552,7 @@ getTweetsByWord = function(word, cb) {
 				}
 			}
 
-			// Do we have more than one example with this word? 
+			// Do we have more than one example with this word?
 			// If so, randomize and reduce to one.
 			if (twitterResults.length > 1) {
 				twitterResults = _.shuffle(twitterResults);
@@ -578,7 +578,7 @@ gatherAndCleanPhrases = function(botData, cb) {
 	for (var i = rhymesData.length - 1; i >= 0; i--) {
 	    if (rhymesData[i].length > 0) {
 	        for (var j = rhymesData[i].length - 1; j >= 0; j--) {
-	        	if (rhymesData[i][j].length > 0) {	
+	        	if (rhymesData[i][j].length > 0) {
 		        	for (var k = rhymesData[i][j].length - 1; k >= 0; k-- ) {
 		        		// Starts with a non-letter? Or contains hard return? Remove it.
 		        		if ((/[a-zA-Z]+/.test(rhymesData[i][j][k].tweet.charAt(0)) == false)
@@ -623,13 +623,13 @@ gatherAndCleanPhrases = function(botData, cb) {
 		for (var b = 0; b < rhymesData[a].length; b++) {
 			tempArray[a][b] = [];
 			if (tempArray.length > 0) {
-				var isOriginal = true;					
+				var isOriginal = true;
 				for (var c = b + 1; c < rhymesData[a].length; c++) {
 					var distance = levenshtein.get(rhymesData[a][b][0].tweet.toLowerCase(), rhymesData[a][c][0].tweet.toLowerCase());
 					if (distance < levenshteinThreshold) {
 
 						console.log(' ');
-						console.log('|| Levenshtein Distance ||');		
+						console.log('|| Levenshtein Distance ||');
 						console.log(rhymesData[a][b][0].tweet.toLowerCase());
 						console.log(rhymesData[a][c][0].tweet.toLowerCase());
 						console.log('Distance: ' + distance);
@@ -647,7 +647,7 @@ gatherAndCleanPhrases = function(botData, cb) {
 				tempArray[a][b].push(rhymesData[a][b][0]);
 			}
 		}
-	} 
+	}
 
 	rhymesData = tempArray;
 
@@ -738,7 +738,7 @@ checkRequirements = function(botData, cb) {
 
 		// Local "B Phrases." We need 6.
 		if (botData.aPhrasesQuotaMet) {
-		
+
 			for (var j = 0; j < rhymeSets.length; j++) {
 				// console.log(" ");
 				console.log(">>> B Phrases Loop");
@@ -763,7 +763,7 @@ checkRequirements = function(botData, cb) {
 					if (allPhrases[z].length > 0) {
 						if ((allPhrases[z][0].multiline) == false) {
 							regularPhrases.push(allPhrases[z][0]);
-						} 
+						}
 					};
 				};
 
@@ -781,7 +781,7 @@ checkRequirements = function(botData, cb) {
 						for (var x = 0; x < botData.aPhrases.length; x++) {
 							if (botData.bPhrases[b].tweet == botData.aPhrases[x].tweet) {
 								duplicatesExist = true;
-								break;		
+								break;
 							}
 						}
 
@@ -792,13 +792,13 @@ checkRequirements = function(botData, cb) {
 
 					botData.bPhrases = _.sortBy(botData.bPhrases, 'tweetLength');
 
-					if (botData.bPhrases.length >= 6) {					
+					if (botData.bPhrases.length >= 6) {
 						// botData.bPhrases = _.shuffle(botData.bPhrases);
 						botData.bPhrases = botData.bPhrases.slice(0, 6);
 					};
 
 					botData.bPhrasesQuotaMet = true;
-					break;					
+					break;
 				}
 			}
 
@@ -822,7 +822,7 @@ formatPoem = function(botData, cb) {
 	getTitle = function() {
 		var theTitle = "",
 			titleArray = _.union(botData.aPhrases, botData.bPhrases);
-		
+
 		titleArray.splice(0, 2);
 		titleArray = _.shuffle(titleArray);
 
@@ -855,7 +855,7 @@ formatPoem = function(botData, cb) {
 			};
 			if (theTitle.indexOf(';') != -1) {
 				theTitle = theTitle.slice(0, theTitle.indexOf(';'));
-			};			
+			};
 		};
 
 		if (theTitle.charAt(theTitle.length-1) == ";") {
@@ -866,15 +866,15 @@ formatPoem = function(botData, cb) {
 		//     theTitle = theTitle.substr(0, theTitle.length-1);
 		// };
 
-		botData.tumblrPostTitle = theTitle;
+    botData.tumblrPostTitle = theTitle;
 		return theTitle;
 	}
 
 	// Determine each line
-	var A1, A2, 
+	var A1, A2,
 		a1, a2, a3, a4, a5,
 		b1, b2, b3, b4, b5, b6;
-	
+
 	// Assign
 	A1 = botData.aPhrases[0];
 	A2 = botData.aPhrases[1];
@@ -949,7 +949,7 @@ formatPoem = function(botData, cb) {
 
 	poemBody = poemBody.join('');
 
-	var credits = "<p class=\"credits\">This <a href=\"https://en.wikipedia.org/wiki/Villanelle\">villanelle</a> was made with tweets by: " 
+	var credits = "<p class=\"credits\">This <a href=\"https://en.wikipedia.org/wiki/Villanelle\">villanelle</a> was made with tweets by: "
 			+ "<a href=\"" + A1.url + "\">@" + A1.userScreenName + "</a>, "
 			+ "<a href=\"" + A2.url + "\">@" + A2.userScreenName + "</a>, "
 			+ "<a href=\"" + a1.url + "\">@" + a1.userScreenName + "</a>, "
@@ -981,12 +981,12 @@ publishPoem = function(botData, poemTitle, villanelle, cb) {
 			body: villanelle
 		}
 
-	tumblrClient.text(blogName, options, function(err, success) {
+	tumblrClient.createTextPost(blogName, options, function(err, success) {
 		if (!err) {
 			console.log("Success: " + JSON.stringify(success));
-      botData.tumblrPostID = success.id;
+      botData.tumblrPostID = success.id_string;
       var convertedTitle = poemTitle.replace(/\s+/g, '-').toLowerCase();
-      console.log('http://villanellebot.tumblr.com/post/' + convertedTitle);
+      console.log(`http://villanellebot.tumblr.com/post/${botData.tumblrPostID}/${convertedTitle}`);
 			cb(null, botData);
 		} else {
 			console.log("Errors: " + err);
@@ -1028,7 +1028,7 @@ favoriteTweets = function(botData, cb) {
 
 	    	botData.counter++;
 	    	if (botData.counter >= tweetIDs.length) {
-				cb(null, botData);	    		
+				cb(null, botData);
 	    	}
 	    });
 	}
@@ -1036,8 +1036,8 @@ favoriteTweets = function(botData, cb) {
 
 announcePoem = function(botData, cb) {
   var announceText = "\"" + botData.tumblrPostTitle + "\" - ";
-  var convertedTitle = poemTitle.replace(/\s+/g, '-').toLowerCase();
-	var poemURL = 'http://villanellebot.tumblr.com/post/' + convertedTitle;
+  var convertedTitle = botData.tumblrPostTitle.replace(/\s+/g, '-').toLowerCase();
+  var poemURL = `http://villanellebot.tumblr.com/post/${botData.tumblrPostID}/${convertedTitle}`;
 
 	tf.post('statuses/update', { status: announceText + poemURL }, function(err, data, response) {
   		if (!err) {
